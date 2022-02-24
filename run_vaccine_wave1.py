@@ -35,10 +35,11 @@ base_pars = sc.objdict(
     scaled_pop=54_000_000,  # Population size - does not seem to work?
     n_agents=54_000,  # The number of simulated agents
     beta=0.015,  # Base transmission probability per contact, per day
-    pop_infected=10,  # Number of seed infections
-    start_day='2020-03-01',  # '2021-08-13', # First day of simulation
+    pop_infected=100,  # Number of seed infections
+    start_day='2020-03-01',  # First day of simulation
     end_day='2022-01-31',  # Last day of simulation
     interventions=[],  # Interventions to be added later
+    analyzers=[],  # Analyzers to be added later
     use_waning=True,  # Enable waning immunity
     verbose=0,  # Turn off outputs to avoid notebook clutter
 )
@@ -62,7 +63,7 @@ class vaccine_trial_arms(cv.Analyzer):
         return
 
     def apply(self, sim):
-        if sim.t == self.day:
+        if sim.t == sim.day(self.day):
             placebo_eligible = cv.true(~sim.people.vaccinated)
             placebo_eligible = placebo_eligible[cv.true(sim.people.age[placebo_eligible]>= 12)]
             self.placebo_inds = placebo_eligible[cv.choose(len(placebo_eligible), min(self.trial_size, len(placebo_eligible)))]
@@ -72,7 +73,7 @@ class vaccine_trial_arms(cv.Analyzer):
         return
 
 
-def make_vaccine_intv(day, vaccine='pfizer', coverage=0.5):
+def make_vaccine_intv(day, vaccine='pfizer', coverage=0.35):
     '''
     Return a vaccine intervention on a single day
     vaccine (str): Vaccine to implement
@@ -90,7 +91,15 @@ def make_scenarios(n_reps=5, vx_res=5):
     scenarios = []
 
     for rand_seed in range(n_reps):
-
+        scenarios += [{
+            # No vaccination
+            'label': 'No vaccination',
+            'meta': {
+                'pars': dict(base_pars, **{  # Update base_pars with scenario-specific parameters
+                    'rand_seed': rand_seed,
+                })
+            },
+        }]
         for vx_day_offset in np.linspace(1, sc.daydiff(base_pars['start_day'], base_pars['end_day'])-window, vx_res):
             vx_day = sc.datedelta(base_pars['start_day'], days=vx_day_offset)
             scenario = {
@@ -118,11 +127,12 @@ def make_sim(label, meta):
     '''
 
     p = sc.dcp(meta['pars'])
-
-    vx = meta['vx']
-    p['interventions'] += [make_vaccine_intv(**vx)]
-    vax_date = vx['day']
-    vax_day = cv.day(vax_date, start_date=p['start_day'])
+    if 'vx' in meta:
+        vx = meta['vx']
+        p['interventions'] += [make_vaccine_intv(**vx)]
+        vax_date = vx['day']
+        vax_day = cv.day(vax_date, start_date=p['start_day'])
+        p['analyzers'] += [vaccine_trial_arms(vax_date, trial_size=trial_size), cv.snapshot(days=vax_day + window)]
 
     # Create variants
     beta = cv.variant('beta', days='2021-01-01', n_imports=4000)
@@ -130,9 +140,9 @@ def make_sim(label, meta):
     omicron = cv.variant('omicron', days='2021-11-01', n_imports=4000)
     variants = [beta, delta, omicron]
 
-    analyzers = [vaccine_trial_arms(vax_date, trial_size=trial_size), cv.snapshot(days=vax_day+window)]
 
-    sim = cv.Sim(label=label, pars=p, variants=variants, analyzers=analyzers)
+
+    sim = cv.Sim(label=label, pars=p, variants=variants)
     sim.meta = meta
     sim.initialize()
 
@@ -140,7 +150,7 @@ def make_sim(label, meta):
 
 
 if __name__ == '__main__':
-    n_reps = 2
+    n_reps = 1
     vx_res = 5
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
@@ -153,20 +163,30 @@ if __name__ == '__main__':
 
     ret = []
     for sim in msim.sims:
-        vx_day = sim.day(sim.meta['vx']['day'])
-        placebo_inds = sim['analyzers'][0].placebo_inds
-        vacc_inds = sim['analyzers'][0].vacc_inds
-        snap = sim['analyzers'][1].snapshots[0]
-        VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds]>vx_day).sum()/cv.true(snap.date_exposed[placebo_inds]>vx_day).sum())
-        VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds]>vx_day).sum()/cv.true(snap.date_symptomatic[placebo_inds]>vx_day).sum())
-        VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds]>vx_day).sum()/cv.true(snap.date_severe[placebo_inds]>vx_day).sum())
-        ret.append({
-            'label': sim.label,
-            'VE_inf': VE_inf,
-            'VE_symp': VE_symp,
-            'VE_sev': VE_sev,
-            'vx_day': sim.meta['vx']['day'],
-        })
+        sim.plot(to_plot = ['new_infections_by_variant', 'n_naive', 'cum_deaths', 'frac_vaccinated'])
+        if 'vx' in sim.meta:
+            vx_day = sim.day(sim.meta['vx']['day'])
+            placebo_inds = sim['analyzers'][0].placebo_inds
+            vacc_inds = sim['analyzers'][0].vacc_inds
+            snap = sim['analyzers'][1].snapshots[0]
+            VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds]>vx_day).sum()/cv.true(snap.date_exposed[placebo_inds]>vx_day).sum())
+            VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds]>vx_day).sum()/cv.true(snap.date_symptomatic[placebo_inds]>vx_day).sum())
+            VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds]>vx_day).sum()/cv.true(snap.date_severe[placebo_inds]>vx_day).sum())
+            ret.append({
+                'label': sim.label,
+                'VE_inf': VE_inf,
+                'VE_symp': VE_symp,
+                'VE_sev': VE_sev,
+                'vx_day': sim.meta['vx']['day'],
+            })
+        else:
+            ret.append({
+                'label': sim.label,
+                'VE_inf': None,
+                'VE_symp': None,
+                'VE_sev': None,
+                'vx_day': None,
+            })
 
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
