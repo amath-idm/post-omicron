@@ -33,6 +33,9 @@ plot_uncertainty = True
 resfolder = 'results'
 figdir = 'figs'
 
+do_save = True
+do_show = True
+
 # Covasim default parameters will be overridden with the following
 base_pars = sc.objdict(
     scaled_pop=54_000_000,  # Population size - does not seem to work?
@@ -43,7 +46,6 @@ base_pars = sc.objdict(
     end_day='2022-01-31',  # Last day of simulation
     interventions=[],  # Interventions to be added later
     analyzers=[],  # Analyzers to be added later
-    use_waning=True,  # Enable waning immunity
     verbose=0,  # Turn off outputs to avoid notebook clutter
 )
 
@@ -125,8 +127,6 @@ def make_sim(label, meta):
     '''
     This "builder" function creates a single simulation. It is intended to be called in parallel
 
-    vax_day (int): Day of vaccine intervention
-
     '''
 
     p = sc.dcp(meta['pars'])
@@ -175,6 +175,9 @@ if __name__ == '__main__':
     print('Running simulations...')
     msim = cv.MultiSim(sims)
     msim.run()
+
+    if do_save:
+        msim.save(str(sc.path(resfolder) / 'msim.msim'))
 
     exp_dfs = []
     dfs = []
@@ -244,13 +247,14 @@ if __name__ == '__main__':
 
     # LAST AXIS
     ax = axv[-1]
-    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
     sns.lineplot(data=res, x='vx_day', y='VE_inf', ax=ax, lw=2, label='Infection')
     sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic disease')
+    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
     ax.set_xlabel('Date')
     ax.set_ylabel('Vaccine efficacy (60 day window)')
     ax.grid()
     ax.set_title('Vaccine efficacy if vaccinating on this date')
 
-    fig.show()
+    if do_show:
+        fig.show()
     sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
