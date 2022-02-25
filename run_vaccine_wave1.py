@@ -166,7 +166,7 @@ def make_sim(label, meta):
 
 if __name__ == '__main__':
     n_reps = 3
-    vx_res = 5
+    vx_res = 10
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
     print('Building scenarios...')
@@ -253,4 +253,4 @@ if __name__ == '__main__':
     ax.set_title('Vaccine efficacy if vaccinating on this date')
 
     fig.show()
-    sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy'), fig=fig)
+    sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
