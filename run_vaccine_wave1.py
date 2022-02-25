@@ -17,7 +17,9 @@ import covasim as cv
 import os
 import sys
 import matplotlib.pyplot as plt
+import seaborn as sns
 import matplotlib.dates as mdates
+import matplotlib.ticker as mtick
 
 
 module_path = os.path.abspath(os.path.join('..'))
@@ -29,6 +31,7 @@ verbose = 0
 debug = 0
 plot_uncertainty = True
 resfolder = 'results'
+figdir = 'figs'
 
 # Covasim default parameters will be overridden with the following
 base_pars = sc.objdict(
@@ -162,7 +165,7 @@ def make_sim(label, meta):
 
 
 if __name__ == '__main__':
-    n_reps = 1
+    n_reps = 3
     vx_res = 5
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
@@ -173,6 +176,8 @@ if __name__ == '__main__':
     msim = cv.MultiSim(sims)
     msim.run()
 
+    exp_dfs = []
+    dfs = []
     ret = []
     no_vax_res = []
     for sim in msim.sims:
@@ -193,16 +198,59 @@ if __name__ == '__main__':
                 'vx_day': sim.meta['vx']['day'],
             })
         else:
+            # New infections by variant
+            reskey = 'new_infections_by_variant'
+            dat = sc.dcp(sim.results['variant'][reskey].values)
+            d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=sim['variant_map'].values())
+            dfs.append(d)
             no_vax_res.append(sim.results)
-            ret.append({
-                'label': sim.label,
-                'VE_inf': None,
-                'VE_symp': None,
-                'VE_sev': None,
-                'vx_day': None,
-            })
+            # Num exposed
+            reskey = 'n_naive'
+            dat = sc.dcp(sim.results[reskey].values)
+            vals = dat.T
+
+            d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
+            d['Exposed (%)'] = 100 - 100 * d[
+                'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
+            d['rep'] = sim['rand_seed']
+            exp_dfs.append(d)
+
+    df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
+    exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
 
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
     print(res)
 
+    fig, axv = plt.subplots(2, 1, figsize=(7, 6), sharex=True)
+    # FIRST AXIS
+    ax = axv[0]
+    sns.lineplot(data=df.reset_index(), x='Date', y='Infections', hue='Variant', ci='sd', ax=ax)
+    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+    ax.grid()
+    ax.set_title('Infections by variant and percent exposed')
+    ax.set_ylim(bottom=0, top=2000000)
+
+    # TWIN FIRST AXIS
+    ax = axv[0].twinx()
+    sns.lineplot(data=exp_df.reset_index(), x='Date', y='Exposed (%)', ci='sd', color='k', ls='--', palette='tab10',
+                 lw=2, ax=ax)
+    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+    # ax.grid()
+    # ax.set_title('Exposed (%)')
+    ax.set_ylim(bottom=0, top=100)
+
+    # LAST AXIS
+    ax = axv[-1]
+    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
+    sns.lineplot(data=res, x='vx_day', y='VE_inf', ax=ax, lw=2, label='Infection')
+    sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic disease')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Vaccine efficacy (60 day window)')
+    ax.grid()
+    ax.set_title('Vaccine efficacy if vaccinating on this date')
+
+    fig.show()
+    sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy'), fig=fig)
