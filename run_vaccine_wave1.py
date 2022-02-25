@@ -35,7 +35,7 @@ base_pars = sc.objdict(
     scaled_pop=54_000_000,  # Population size - does not seem to work?
     n_agents=54_000,  # The number of simulated agents
     beta=0.015,  # Base transmission probability per contact, per day
-    pop_infected=100,  # Number of seed infections
+    pop_infected=10,  # Number of seed infections
     start_day='2020-03-01',  # First day of simulation
     end_day='2022-01-31',  # Last day of simulation
     interventions=[],  # Interventions to be added later
@@ -135,16 +135,28 @@ def make_sim(label, meta):
         p['analyzers'] += [vaccine_trial_arms(vax_date, trial_size=trial_size), cv.snapshot(days=vax_day + window)]
 
     # Create variants
-    beta = cv.variant('beta', days='2021-01-01', n_imports=4000)
-    delta = cv.variant('delta', days='2021-06-01', n_imports=4000)
-    omicron = cv.variant('omicron', days='2021-11-01', n_imports=4000)
+    beta = cv.variant('beta', days='2020-10-15', n_imports=6000)
+    delta = cv.variant('delta', days='2021-05-01', n_imports=4000)
+    omicron = cv.variant('omicron', days='2021-10-01', n_imports=4000)
     variants = [beta, delta, omicron]
 
+    # Create beta interventions
+    beta_interventions = [
+        cv.change_beta('2020-06-15', 0.4),  # shut down
+        cv.change_beta('2020-07-25', 0.3),  # shut down
+        cv.change_beta('2020-10-15', 1),  # reopen
+        cv.change_beta('2020-12-15', 0.6),  # shut down
+        cv.change_beta('2021-01-01', 0.3),  # shut down
+        cv.change_beta('2021-03-15', 1),  # shut down
+        cv.change_beta('2021-06-15', 0.6),  # shut down
+        cv.change_beta('2021-07-15', 0.3),  # shut down
+        cv.change_beta('2021-09-01', 0.9),  # reopen
+    ]
 
+    p['interventions'] += beta_interventions
 
     sim = cv.Sim(label=label, pars=p, variants=variants)
     sim.meta = meta
-    sim.initialize()
 
     return sim
 
@@ -162,6 +174,7 @@ if __name__ == '__main__':
     msim.run()
 
     ret = []
+    no_vax_res = []
     for sim in msim.sims:
         sim.plot(to_plot = ['new_infections_by_variant', 'n_naive', 'cum_deaths', 'frac_vaccinated'])
         if 'vx' in sim.meta:
@@ -180,6 +193,7 @@ if __name__ == '__main__':
                 'vx_day': sim.meta['vx']['day'],
             })
         else:
+            no_vax_res.append(sim.results)
             ret.append({
                 'label': sim.label,
                 'VE_inf': None,
@@ -191,3 +205,4 @@ if __name__ == '__main__':
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
     print(res)
+
