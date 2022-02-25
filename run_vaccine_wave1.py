@@ -32,8 +32,8 @@ debug = 0
 plot_uncertainty = True
 resfolder = 'results'
 figdir = 'figs'
-
-do_save = True
+do_show = True
+do_run = True
 
 # Covasim default parameters will be overridden with the following
 base_pars = sc.objdict(
@@ -42,7 +42,7 @@ base_pars = sc.objdict(
     beta=0.015,  # Base transmission probability per contact, per day
     pop_infected=10,  # Number of seed infections
     start_day='2020-03-01',  # First day of simulation
-    end_day='2022-01-31',  # Last day of simulation
+    end_day='2022-03-15',  # Last day of simulation
     interventions=[],  # Interventions to be added later
     analyzers=[],  # Analyzers to be added later
     use_waning=True,  # Enable waning immunity
@@ -142,7 +142,7 @@ def make_sim(label, meta):
     # Create variants
     beta = cv.variant('beta', days='2020-10-15', n_imports=6000)
     delta = cv.variant('delta', days='2021-05-01', n_imports=4000)
-    omicron = cv.variant('omicron', days='2021-10-01', n_imports=4000)
+    omicron = cv.variant('omicron', days='2021-10-15', n_imports=4000)
     variants = [beta, delta, omicron]
 
     # Create beta interventions
@@ -152,10 +152,11 @@ def make_sim(label, meta):
         cv.change_beta('2020-10-15', 1),  # reopen
         cv.change_beta('2020-12-15', 0.6),  # shut down
         cv.change_beta('2021-01-01', 0.3),  # shut down
-        cv.change_beta('2021-03-15', 1),  # shut down
+        cv.change_beta('2021-04-01', 1),  # shut down
         cv.change_beta('2021-06-15', 0.6),  # shut down
         cv.change_beta('2021-07-15', 0.3),  # shut down
-        cv.change_beta('2021-09-01', 0.9),  # reopen
+        cv.change_beta('2021-10-15', 0.9),  # reopen
+        cv.change_beta('2021-11-15', 0.6)   # shut down
     ]
 
     p['interventions'] += beta_interventions
@@ -167,65 +168,78 @@ def make_sim(label, meta):
 
 
 if __name__ == '__main__':
-    n_reps = 3
-    vx_res = 10
-    scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
-    print('Building scenarios...')
-    sims = sc.parallelize(make_sim, iterkwargs=scenarios)
+    if do_run:
+        n_reps = 3
+        vx_res = 10
+        scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
-    print('Running simulations...')
-    msim = cv.MultiSim(sims)
-    msim.run()
+        print('Building scenarios...')
+        sims = sc.parallelize(make_sim, iterkwargs=scenarios)
 
-    if do_save:
-        msim.save(str(sc.path(resfolder) / 'msim.msim'))
+        print('Running simulations...')
+        msim = cv.MultiSim(sims)
+        msim.run()
 
-    exp_dfs = []
-    dfs = []
-    ret = []
-    no_vax_res = []
-    for sim in msim.sims:
-        sim.plot(to_plot = ['new_infections_by_variant', 'n_naive', 'cum_deaths', 'frac_vaccinated'])
-        if 'vx' in sim.meta:
-            vx_day = sim.day(sim.meta['vx']['day'])
-            placebo_inds = sim['analyzers'][0].placebo_inds
-            vacc_inds = sim['analyzers'][0].vacc_inds
-            snap = sim['analyzers'][1].snapshots[0]
-            VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds]>vx_day).sum()/cv.true(snap.date_exposed[placebo_inds]>vx_day).sum())
-            VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds]>vx_day).sum()/cv.true(snap.date_symptomatic[placebo_inds]>vx_day).sum())
-            VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds]>vx_day).sum()/cv.true(snap.date_severe[placebo_inds]>vx_day).sum())
-            ret.append({
-                'label': sim.label,
-                'VE_inf': VE_inf,
-                'VE_symp': VE_symp,
-                'VE_sev': VE_sev,
-                'vx_day': sim.meta['vx']['day'],
-            })
-        else:
-            # New infections by variant
-            reskey = 'new_infections_by_variant'
-            dat = sc.dcp(sim.results['variant'][reskey].values)
-            d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=sim['variant_map'].values())
-            dfs.append(d)
-            no_vax_res.append(sim.results)
-            # Num exposed
-            reskey = 'n_naive'
-            dat = sc.dcp(sim.results[reskey].values)
-            vals = dat.T
+        print('Processing and saving results...')
+        exp_dfs = []
+        dfs = []
+        ret = []
+        no_vax_res = []
+        for sim in msim.sims:
+            if 'vx' in sim.meta:
+                vx_day = sim.day(sim.meta['vx']['day'])
+                placebo_inds = sim['analyzers'][0].placebo_inds
+                vacc_inds = sim['analyzers'][0].vacc_inds
+                snap = sim['analyzers'][1].snapshots[0]
+                VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds]>vx_day).sum()/cv.true(snap.date_exposed[placebo_inds]>vx_day).sum())
+                if VE_inf < 0:
+                    VE_inf = 0
+                VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds]>vx_day).sum()/cv.true(snap.date_symptomatic[placebo_inds]>vx_day).sum())
+                if VE_symp < 0:
+                    VE_symp = 0
+                VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds]>vx_day).sum()/cv.true(snap.date_severe[placebo_inds]>vx_day).sum())
+                if VE_sev < 0:
+                    VE_sev = 0
+                ret.append({
+                    'label': sim.label,
+                    'VE_inf': VE_inf,
+                    'VE_symp': VE_symp,
+                    'VE_sev': VE_sev,
+                    'vx_day': sim.meta['vx']['day'],
+                })
+            else:
+                # New infections by variant
+                reskey = 'new_infections_by_variant'
+                dat = sc.dcp(sim.results['variant'][reskey].values)
+                d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=sim['variant_map'].values())
+                dfs.append(d)
+                no_vax_res.append(sim.results)
+                # Num exposed
+                reskey = 'n_naive'
+                dat = sc.dcp(sim.results[reskey].values)
+                vals = dat.T
 
-            d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
-            d['Exposed (%)'] = 100 - 100 * d[
-                'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
-            d['rep'] = sim['rand_seed']
-            exp_dfs.append(d)
+                d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
+                d['Exposed (%)'] = 100 - 100 * d[
+                    'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
+                d['rep'] = sim['rand_seed']
+                exp_dfs.append(d)
 
-    df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
-    exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
+        df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
+        exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
 
-    res = pd.DataFrame(ret)
-    res['vx_day'] = pd.to_datetime(res['vx_day'])
-    print(res)
+        res = pd.DataFrame(ret)
+        res['vx_day'] = pd.to_datetime(res['vx_day'])
+
+        sc.saveobj(f'{resfolder}/inf.obj', df)
+        sc.saveobj(f'{resfolder}/exp.obj', exp_df)
+        sc.saveobj(f'{resfolder}/res.obj', res)
+
+    else:
+        df = sc.loadobj((str(sc.path(resfolder) / 'inf.obj')))
+        exp_df = sc.loadobj((str(sc.path(resfolder) / 'exp.obj')))
+        res = sc.loadobj((str(sc.path(resfolder) / 'res.obj')))
 
     fig, axv = plt.subplots(2, 1, figsize=(7, 6), sharex=True)
     # FIRST AXIS
@@ -255,7 +269,8 @@ if __name__ == '__main__':
     ax.set_xlabel('Date')
     ax.set_ylabel('Vaccine efficacy (60 day window)')
     ax.grid()
-    ax.set_title('Vaccine efficacy if vaccinating on this date')
+    ax.set_title('Vaccine efficacy (if vaccinating on this date)')
 
-    fig.show()
+    if do_show:
+        fig.show()
     sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
