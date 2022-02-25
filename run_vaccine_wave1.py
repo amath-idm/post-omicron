@@ -33,6 +33,8 @@ plot_uncertainty = True
 resfolder = 'results'
 figdir = 'figs'
 
+do_save = True
+
 # Covasim default parameters will be overridden with the following
 base_pars = sc.objdict(
     scaled_pop=54_000_000,  # Population size - does not seem to work?
@@ -176,6 +178,9 @@ if __name__ == '__main__':
     msim = cv.MultiSim(sims)
     msim.run()
 
+    if do_save:
+        msim.save(str(sc.path(resfolder) / 'msim.msim'))
+
     exp_dfs = []
     dfs = []
     ret = []
@@ -244,9 +249,9 @@ if __name__ == '__main__':
 
     # LAST AXIS
     ax = axv[-1]
-    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
     sns.lineplot(data=res, x='vx_day', y='VE_inf', ax=ax, lw=2, label='Infection')
     sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic disease')
+    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
     ax.set_xlabel('Date')
     ax.set_ylabel('Vaccine efficacy (60 day window)')
     ax.grid()
