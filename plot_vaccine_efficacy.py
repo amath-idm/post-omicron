@@ -1,6 +1,6 @@
 
 '''
-
+Script to plot vaccine efficacy as a function of time
 '''
 
 import sciris as sc
