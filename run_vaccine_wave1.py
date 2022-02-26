@@ -2,12 +2,6 @@
 
 Script to show how vaccine efficacy varies as a function of time and immunity
 
-on some day (to be swept), pick X% of [target cohort] to vaccinate and mark non-vaccinees as placebo.
-Compute infections in each arm, relative risk / OR / ..., and ultimate VE over a period of Y days.
-So it will be VE as a function of day on which randomization and vaccination occur
-
-Simulate 4 discrete waves.
-
 '''
 
 import numpy as np
@@ -16,7 +10,6 @@ import pandas as pd
 import covasim as cv
 import os
 import sys
-
 
 
 module_path = os.path.abspath(os.path.join('..'))
@@ -53,8 +46,8 @@ slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0067419
 nab_decay_params = {
     'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
-    'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
-    'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
+    # 'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
+    # 'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
 }
 
 
@@ -105,30 +98,34 @@ def make_scenarios(n_reps=5, vx_res=5):
     scenarios = []
 
     for rand_seed in range(n_reps):
-        scenarios += [{
-            # No vaccination
-            'label': 'No vaccination',
-            'meta': {
-                'pars': dict(base_pars, **{  # Update base_pars with scenario-specific parameters
-                    'rand_seed': rand_seed,
-                })
-            },
-        }]
-        for vx_day_offset in np.linspace(1, sc.daydiff(base_pars['start_day'], base_pars['end_day'])-window, vx_res):
-            vx_day = sc.datedelta(base_pars['start_day'], days=vx_day_offset)
-            scenario = {
-                'label': f'vx_day {vx_day}',
+        for nab_param, nab_decay in nab_decay_params.items():
+            scenarios += [{
+                # No vaccination
+                'label': f'No vaccination',
                 'meta': {
-                    'vx': {
-                        'vaccine': 'pfizer',
-                        'day': vx_day,
-                    },
                     'pars': dict(base_pars, **{  # Update base_pars with scenario-specific parameters
                         'rand_seed': rand_seed,
-                    })
+                        'nab_decay': nab_decay,
+                    }),
+                    'nab_decay': nab_param,
                 },
-            }
-            scenarios.append(scenario)
+            }]
+            for vx_day_offset in np.linspace(1, sc.daydiff(base_pars['start_day'], base_pars['end_day'])-window, vx_res):
+                vx_day = sc.datedelta(base_pars['start_day'], days=vx_day_offset)
+                scenario = {
+                    'label': f'vx_day {vx_day}',
+                    'meta': {
+                        'vx': {
+                            'vaccine': 'pfizer',
+                            'day': vx_day,
+                        },
+                        'pars': dict(base_pars, **{  # Update base_pars with scenario-specific parameters
+                            'rand_seed': rand_seed,
+                        }),
+                        'nab_decay': nab_param,
+                    },
+                }
+                scenarios.append(scenario)
     return scenarios
 
 
@@ -179,9 +176,10 @@ def make_sim(label, meta):
 
 def create_dfs(msim):
     exp_dfs = []
-    dfs = []
+    inf_dfs = []
+    sev_dfs = []
+    nab_decays = []
     ret = []
-    no_vax_res = []
     for sim in msim.sims:
         if 'vx' in sim.meta:
             vx_day = sim.day(sim.meta['vx']['day'])
@@ -202,6 +200,7 @@ def create_dfs(msim):
                 VE_sev = 0
             ret.append({
                 'label': sim.label,
+                'nab_decay': sim.meta['nab_decay'],
                 'VE_inf': VE_inf,
                 'VE_symp': VE_symp,
                 'VE_sev': VE_sev,
@@ -213,44 +212,56 @@ def create_dfs(msim):
             dat = sc.dcp(sim.results['variant'][reskey].values)
             d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'),
                              columns=sim['variant_map'].values())
-            dfs.append(d)
-            no_vax_res.append(sim.results)
+            nab_decay = sc.dcp(sim.meta['nab_decay'])
+            nab_decays += [nab_decay]*dat.size
+            inf_dfs.append(d)
+
+            # New infections by variant
+            reskey = 'new_severe_by_variant'
+            dat = sc.dcp(sim.results['variant'][reskey].values)
+            d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'),
+                             columns=sim['variant_map'].values())
+            sev_dfs.append(d)
+            
             # Num exposed
             reskey = 'n_naive'
             dat = sc.dcp(sim.results[reskey].values)
             vals = dat.T
 
             d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
-            d['Exposed (%)'] = 100 - 100 * d[
-                'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
+            d['Exposed (%)'] = 100 - 100 * d['Exposed'] / sim.scaled_pop_size 
             d['rep'] = sim['rand_seed']
             exp_dfs.append(d)
 
-    df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
-    exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
+    inf_df = pd.concat(inf_dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
+    inf_df['nab_decay'] = nab_decays
+    sev_df = pd.concat(sev_dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Severe'})
+    sev_df['nab_decay'] = nab_decays
+    exp_df = pd.concat(exp_dfs)  
+    sev_df['nab_decay'] = nab_decays
 
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
-    return df, exp_df, res
-
+    return inf_df, sev_df, exp_df, res
 
 
 if __name__ == '__main__':
-    n_reps = 2
-    vx_res = 5
+    n_reps = 20
+    vx_res = 50
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
-    print('Building scenarios...')
+    print(f'Building {len(scenarios)} scenarios...')
     sims = sc.parallelize(make_sim, iterkwargs=scenarios)
 
-    print('Running simulations...')
+    print(f'Running {len(scenarios)} simulations...')
     msim = cv.MultiSim(sims)
     msim.run()
 
     print('Processing and saving results...')
-    df, exp_df, res = create_dfs(msim)
+    inf_df, sev_df, exp_df, res = create_dfs(msim)
 
-    sc.saveobj(f'{resfolder}/inf.obj', df)
+    sc.saveobj(f'{resfolder}/inf.obj', inf_df)
+    sc.saveobj(f'{resfolder}/sev.obj', sev_df)
     sc.saveobj(f'{resfolder}/exp.obj', exp_df)
     sc.saveobj(f'{resfolder}/res.obj', res)
     print('Done.')
