@@ -16,10 +16,7 @@ import pandas as pd
 import covasim as cv
 import os
 import sys
-import matplotlib.pyplot as plt
-import seaborn as sns
-import matplotlib.dates as mdates
-import matplotlib.ticker as mtick
+
 
 
 module_path = os.path.abspath(os.path.join('..'))
@@ -32,8 +29,7 @@ debug = 0
 plot_uncertainty = True
 resfolder = 'results'
 figdir = 'figs'
-do_show = True
-do_run = True
+
 
 # Covasim default parameters will be overridden with the following
 base_pars = sc.objdict(
@@ -48,6 +44,19 @@ base_pars = sc.objdict(
     use_waning=True,  # Enable waning immunity
     verbose=0,  # Turn off outputs to avoid notebook clutter
 )
+
+fast_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 100, decay_time1=100,
+                  decay_rate2=np.log(2) / 250, decay_time2=200)
+slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.006741981, decay_time1=47,
+                  decay_rate2=0.001764455, decay_time2=106)
+
+nab_decay_params = {
+    'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
+    'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
+    'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
+    'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
+}
+
 
 window = 80 # 60 days after 2nd dose
 trial_size = 8000
@@ -140,22 +149,23 @@ def make_sim(label, meta):
         p['analyzers'] += [vaccine_trial_arms(vax_date, trial_size=trial_size), cv.snapshot(days=vax_day + window)]
 
     # Create variants
-    beta = cv.variant('beta', days='2020-10-15', n_imports=6000)
-    delta = cv.variant('delta', days='2021-05-01', n_imports=4000)
-    omicron = cv.variant('omicron', days='2021-10-15', n_imports=4000)
+    beta = cv.variant('beta', days='2020-10-15', n_imports=4000)
+    beta.p['rel_beta'] = 1.4
+    delta = cv.variant('delta', days='2021-05-01', n_imports=6000)
+    omicron = cv.variant('omicron', days='2021-10-25', n_imports=4000)
     variants = [beta, delta, omicron]
 
     # Create beta interventions
     beta_interventions = [
-        cv.change_beta('2020-06-15', 0.4),  # shut down
-        cv.change_beta('2020-07-25', 0.3),  # shut down
+        cv.change_beta('2020-06-20', 0.6),  # shut down
+        cv.change_beta('2020-07-15', 0.3),  # shut down
         cv.change_beta('2020-10-15', 1),  # reopen
         cv.change_beta('2020-12-15', 0.6),  # shut down
         cv.change_beta('2021-01-01', 0.3),  # shut down
-        cv.change_beta('2021-04-01', 1),  # shut down
-        cv.change_beta('2021-06-15', 0.6),  # shut down
+        cv.change_beta('2021-05-01', 1),  # shut down
+        cv.change_beta('2021-07-01', 0.6),  # shut down
         cv.change_beta('2021-07-15', 0.3),  # shut down
-        cv.change_beta('2021-10-15', 0.9),  # reopen
+        cv.change_beta('2021-10-25', 0.9),  # reopen
         cv.change_beta('2021-11-15', 0.6)   # shut down
     ]
 
@@ -167,110 +177,80 @@ def make_sim(label, meta):
     return sim
 
 
+def create_dfs(msim):
+    exp_dfs = []
+    dfs = []
+    ret = []
+    no_vax_res = []
+    for sim in msim.sims:
+        if 'vx' in sim.meta:
+            vx_day = sim.day(sim.meta['vx']['day'])
+            placebo_inds = sim['analyzers'][0].placebo_inds
+            vacc_inds = sim['analyzers'][0].vacc_inds
+            snap = sim['analyzers'][1].snapshots[0]
+            VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds] > vx_day).sum() / cv.true(
+                snap.date_exposed[placebo_inds] > vx_day).sum())
+            if VE_inf < 0:
+                VE_inf = 0
+            VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds] > vx_day).sum() / cv.true(
+                snap.date_symptomatic[placebo_inds] > vx_day).sum())
+            if VE_symp < 0:
+                VE_symp = 0
+            VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds] > vx_day).sum() / cv.true(
+                snap.date_severe[placebo_inds] > vx_day).sum())
+            if VE_sev < 0:
+                VE_sev = 0
+            ret.append({
+                'label': sim.label,
+                'VE_inf': VE_inf,
+                'VE_symp': VE_symp,
+                'VE_sev': VE_sev,
+                'vx_day': sim.meta['vx']['day'],
+            })
+        else:
+            # New infections by variant
+            reskey = 'new_infections_by_variant'
+            dat = sc.dcp(sim.results['variant'][reskey].values)
+            d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'),
+                             columns=sim['variant_map'].values())
+            dfs.append(d)
+            no_vax_res.append(sim.results)
+            # Num exposed
+            reskey = 'n_naive'
+            dat = sc.dcp(sim.results[reskey].values)
+            vals = dat.T
+
+            d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
+            d['Exposed (%)'] = 100 - 100 * d[
+                'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
+            d['rep'] = sim['rand_seed']
+            exp_dfs.append(d)
+
+    df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
+    exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
+
+    res = pd.DataFrame(ret)
+    res['vx_day'] = pd.to_datetime(res['vx_day'])
+    return df, exp_df, res
+
+
+
 if __name__ == '__main__':
+    n_reps = 2
+    vx_res = 5
+    scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
-    if do_run:
-        n_reps = 3
-        vx_res = 10
-        scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
+    print('Building scenarios...')
+    sims = sc.parallelize(make_sim, iterkwargs=scenarios)
 
-        print('Building scenarios...')
-        sims = sc.parallelize(make_sim, iterkwargs=scenarios)
+    print('Running simulations...')
+    msim = cv.MultiSim(sims)
+    msim.run()
 
-        print('Running simulations...')
-        msim = cv.MultiSim(sims)
-        msim.run()
+    print('Processing and saving results...')
+    df, exp_df, res = create_dfs(msim)
 
-        print('Processing and saving results...')
-        exp_dfs = []
-        dfs = []
-        ret = []
-        no_vax_res = []
-        for sim in msim.sims:
-            if 'vx' in sim.meta:
-                vx_day = sim.day(sim.meta['vx']['day'])
-                placebo_inds = sim['analyzers'][0].placebo_inds
-                vacc_inds = sim['analyzers'][0].vacc_inds
-                snap = sim['analyzers'][1].snapshots[0]
-                VE_inf = 1 - (cv.true(snap.date_exposed[vacc_inds]>vx_day).sum()/cv.true(snap.date_exposed[placebo_inds]>vx_day).sum())
-                if VE_inf < 0:
-                    VE_inf = 0
-                VE_symp = 1 - (cv.true(snap.date_symptomatic[vacc_inds]>vx_day).sum()/cv.true(snap.date_symptomatic[placebo_inds]>vx_day).sum())
-                if VE_symp < 0:
-                    VE_symp = 0
-                VE_sev = 1 - (cv.true(snap.date_severe[vacc_inds]>vx_day).sum()/cv.true(snap.date_severe[placebo_inds]>vx_day).sum())
-                if VE_sev < 0:
-                    VE_sev = 0
-                ret.append({
-                    'label': sim.label,
-                    'VE_inf': VE_inf,
-                    'VE_symp': VE_symp,
-                    'VE_sev': VE_sev,
-                    'vx_day': sim.meta['vx']['day'],
-                })
-            else:
-                # New infections by variant
-                reskey = 'new_infections_by_variant'
-                dat = sc.dcp(sim.results['variant'][reskey].values)
-                d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=sim['variant_map'].values())
-                dfs.append(d)
-                no_vax_res.append(sim.results)
-                # Num exposed
-                reskey = 'n_naive'
-                dat = sc.dcp(sim.results[reskey].values)
-                vals = dat.T
-
-                d = pd.DataFrame(vals, index=pd.DatetimeIndex(sim.results['date'], name='Date'), columns=['Exposed'])
-                d['Exposed (%)'] = 100 - 100 * d[
-                    'Exposed'] / sim.scaled_pop_size  # sim.results['cum_deaths'][:] - sim.results['n_recovered'][:] - sim.results['n_exposed'][:]
-                d['rep'] = sim['rand_seed']
-                exp_dfs.append(d)
-
-        df = pd.concat(dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
-        exp_df = pd.concat(exp_dfs)  # .stack().reset_index().rename(columns={'level_1': 'Variant', 0:'Infections'})
-
-        res = pd.DataFrame(ret)
-        res['vx_day'] = pd.to_datetime(res['vx_day'])
-
-        sc.saveobj(f'{resfolder}/inf.obj', df)
-        sc.saveobj(f'{resfolder}/exp.obj', exp_df)
-        sc.saveobj(f'{resfolder}/res.obj', res)
-
-    else:
-        df = sc.loadobj((str(sc.path(resfolder) / 'inf.obj')))
-        exp_df = sc.loadobj((str(sc.path(resfolder) / 'exp.obj')))
-        res = sc.loadobj((str(sc.path(resfolder) / 'res.obj')))
-
-    fig, axv = plt.subplots(2, 1, figsize=(7, 6), sharex=True)
-    # FIRST AXIS
-    ax = axv[0]
-    sns.lineplot(data=df.reset_index(), x='Date', y='Infections', hue='Variant', ci='sd', ax=ax)
-    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-    ax.grid()
-    ax.set_title('Infections by variant and percent exposed')
-    ax.set_ylim(bottom=0, top=2000000)
-
-    # TWIN FIRST AXIS
-    ax = axv[0].twinx()
-    sns.lineplot(data=exp_df.reset_index(), x='Date', y='Exposed (%)', ci='sd', color='k', ls='--', palette='tab10',
-                 lw=2, ax=ax)
-    ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-    # ax.grid()
-    # ax.set_title('Exposed (%)')
-    ax.set_ylim(bottom=0, top=100)
-
-    # LAST AXIS
-    ax = axv[-1]
-    sns.lineplot(data=res, x='vx_day', y='VE_inf', ax=ax, lw=2, label='Infection')
-    sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic disease')
-    sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Vaccine efficacy (60 day window)')
-    ax.grid()
-    ax.set_title('Vaccine efficacy (if vaccinating on this date)')
-
-    if do_show:
-        fig.show()
-    sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
+    sc.saveobj(f'{resfolder}/inf.obj', df)
+    sc.saveobj(f'{resfolder}/exp.obj', exp_df)
+    sc.saveobj(f'{resfolder}/res.obj', res)
+    print('Done.')
