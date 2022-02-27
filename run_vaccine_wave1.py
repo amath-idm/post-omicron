@@ -29,6 +29,7 @@ base_pars = sc.objdict(
     scaled_pop=54_000_000,  # Population size - does not seem to work?
     n_agents=54_000,  # The number of simulated agents
     beta=0.015,  # Base transmission probability per contact, per day
+    location='south africa',
     pop_infected=10,  # Number of seed infections
     start_day='2020-03-01',  # First day of simulation
     end_day='2022-03-15',  # Last day of simulation
