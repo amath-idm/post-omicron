@@ -130,18 +130,33 @@ o2_day_ind = 123  # Index for day after Omicron peak
 #%% Plotting
 
 for i, inf in enumerate(df1['new_infections_by_variant']):
-    if df1['vaccine_boost'][i] == 0 and df1['vaccine_prime'][i] == 0:
-        sc.options(dpi=150)
-        sc.options(font='Avenir')
-        fig, ax = pl.subplots()
-        nab_decay = df1['nab_decay'][i]
-        x = df1['datevec_sim']
-        for j, var in enumerate(inf.values):
-            ax.plot(x, var, label=df1['imm_source'][j])
-            ax.fill_between(x, (inf.low[j,:]), (inf.high[j,:]), alpha=0.3)
-        ax.set_title(f'Infections by variant, {nab_decay}')
-        ax.legend()
-        fig.show()
+    sc.options(dpi=150)
+    sc.options(font='Avenir')
+    fig, axes = pl.subplots(3, 1, figsize=(8, 10), sharex=True)
+    nab_decay = df1['nab_decay'][i]
+    vaccine_boost = df1['vaccine_boost'][i]
+    vaccine_prime = df1['vaccine_prime'][i]
+    x = df1['datevec_sim']
+    
+    for j, var in enumerate(inf.values):
+        axes[0].plot(x, var, label=df1['imm_source'][j])
+        axes[0].fill_between(x, (inf.low[j,:]), (inf.high[j,:]), alpha=0.3)
+    axes[0].set_ylabel('Infections')
+
+    axes[0].set_title(f'{vaccine_prime} primary coverage, {vaccine_boost} booster coverage')
+    axes[0].legend()
+
+    for j, var in enumerate(df1['new_severe_by_variant'][i]):
+        axes[1].plot(x, var, label=df1['imm_source'][j])
+        axes[1].fill_between(x, (df1['new_severe_by_variant'][i].low[j,:]), (df1['new_severe_by_variant'][i].high[j,:]), alpha=0.3)
+    axes[1].set_ylabel('Severe Cases')
+
+    for j, var in enumerate(df1['pop_nabs'][i]):
+        axes[2].plot(x, var, label=df1['imm_source'][j])
+        axes[2].fill_between(x, (df1['pop_nabs_low'][i][j,:]), (df1['pop_nabs_high'][i][j,:]), alpha=0.3)
+    axes[2].set_ylabel('Population NAbs')
+    axes[2].legend()
+    fig.show()
 
 for nab_decay in nab_decays:
     df_to_use = df2[df2['nab_decay']==nab_decay]

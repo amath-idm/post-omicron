@@ -98,7 +98,7 @@ def make_sim(p):
         rand_seed=p.idx,
         nab_decay=nab_decay_params[p.nab_decay],
         beta=0.015,  # Base transmission probability per contact, per day
-        pop_infected=10,  # Number of seed infections
+        pop_infected=70,  # Number of seed infections
         start_day='2020-03-01',  # First day of simulation
         end_day='2022-02-15',  # Last day of simulation
         interventions=[],  # Interventions to be added later
@@ -124,7 +124,7 @@ def make_sim(p):
         cv.change_beta('2021-07-01', 0.6),  # shut down
         cv.change_beta('2021-07-15', 0.3),  # shut down
         cv.change_beta('2021-10-25', 0.9),  # reopen
-        cv.change_beta('2021-11-15', 0.6)   # shut down
+        cv.change_beta('2021-11-25', 0.6)   # shut down
     ]
 
     pars['interventions'] += beta_interventions

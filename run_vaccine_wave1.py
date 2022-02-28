@@ -30,7 +30,7 @@ base_pars = sc.objdict(
     n_agents=54_000,  # The number of simulated agents
     beta=0.015,  # Base transmission probability per contact, per day
     location='south africa',
-    pop_infected=10,  # Number of seed infections
+    pop_infected=70,  # Number of seed infections
     start_day='2020-03-01',  # First day of simulation
     end_day='2022-03-15',  # Last day of simulation
     interventions=[],  # Interventions to be added later
@@ -155,7 +155,7 @@ def make_sim(label, meta):
 
     # Create beta interventions
     beta_interventions = [
-        cv.change_beta('2020-06-20', 0.8),  # shut down
+        cv.change_beta('2020-06-20', 0.6),  # shut down
         cv.change_beta('2020-07-15', 0.3),  # shut down
         cv.change_beta('2020-10-15', 1),  # reopen
         cv.change_beta('2020-12-15', 0.6),  # shut down
@@ -164,7 +164,7 @@ def make_sim(label, meta):
         cv.change_beta('2021-07-01', 0.6),  # shut down
         cv.change_beta('2021-07-15', 0.3),  # shut down
         cv.change_beta('2021-10-25', 0.9),  # reopen
-        cv.change_beta('2021-11-15', 0.6)   # shut down
+        cv.change_beta('2021-11-25', 0.6)   # shut down
     ]
 
     p['interventions'] += beta_interventions

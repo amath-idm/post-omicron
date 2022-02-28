@@ -75,6 +75,6 @@ ax.set_ylabel('Vaccine efficacy (60 day window)')
 ax.grid()
 ax.set_title('Vaccine efficacy (if vaccinating on this date)')
 
-fig.show()
+# fig.show()
 sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
 print('Done.')
