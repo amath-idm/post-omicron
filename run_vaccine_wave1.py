@@ -155,7 +155,7 @@ def make_sim(label, meta):
 
     # Create beta interventions
     beta_interventions = [
-        cv.change_beta('2020-06-20', 0.6),  # shut down
+        cv.change_beta('2020-06-20', 0.8),  # shut down
         cv.change_beta('2020-07-15', 0.3),  # shut down
         cv.change_beta('2020-10-15', 1),  # reopen
         cv.change_beta('2020-12-15', 0.6),  # shut down

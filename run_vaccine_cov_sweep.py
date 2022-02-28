@@ -32,7 +32,7 @@ slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0067419
                   decay_rate2=0.001764455, decay_time2=106)
 
 nab_decay_params = {
-    'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
+    # 'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
     # 'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
     # 'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
@@ -48,16 +48,16 @@ def make_vx_intv(vaccine='pfizer', boost=False, coverage=1):
         * booster: whether or not this is a booster intervention
         * coverage: vaccine coverage
     '''
-    vaccine_start_day = '2021-05-01'
-    day = np.arange(cv.day(vaccine_start_day, start_date='2020-03-01'), cv.day('2022-02-15', start_date='2020-03-01'))
-
+        
     if boost:
+        day = np.arange(cv.day('2021-11-01', start_date='2020-03-01'), cv.day('2022-02-01', start_date='2020-03-01'))
         interval = 180
         subtarget = {'inds': lambda sim: cv.true((sim.people.doses==2) & ((sim.t - sim.people.date_vaccinated) >= interval)),
                          'vals': coverage/90}
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, booster=True,
                                      do_plot=False)
     else:
+        day = np.arange(cv.day('2021-05-01', start_date='2020-03-01'), cv.day('2021-08-01', start_date='2020-03-01'))
         subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 18)), 'vals': coverage/90}
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, do_plot=False)
     return sc.promotetolist(intv)
@@ -238,7 +238,7 @@ if __name__ == '__main__':
         for sim in msim.sims:
             for param in params:
                 d[param].append(sim.run_info[param])
-            date_after = np.argmax(sim.results['date'] == sc.date('2022-02-14'))
+            date_after = np.argmax(sim.results['date'] == sc.date('2021-05-01'))
             d.deaths.append(np.sum(sim.results['new_deaths'][date_after:]))
             d.doses.append(np.sum(sim.results['new_doses'][date_after:]))
             d.n_vaccinated.append(np.sum(sim.results['new_vaccinated'][date_after:]))
@@ -249,5 +249,5 @@ if __name__ == '__main__':
         
 
     # Also create and save data for making additional plots
-    plotdf = get_data_for_plots(msims, filename=f'{resfolder}/{args.root}_data_for_run_plot.obj')
+    plotdf = get_data_for_plots(msims, filename=f'{resfolder}/{args.root}_data_for_run_plot.obj', historical_wave=False)
     print('Done.')
