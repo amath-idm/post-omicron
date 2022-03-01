@@ -32,7 +32,7 @@ base_pars = sc.objdict(
     location='south africa',
     pop_infected=70,  # Number of seed infections
     start_day='2020-03-01',  # First day of simulation
-    end_day='2022-03-15',  # Last day of simulation
+    end_day='2022-05-15',  # Last day of simulation
     interventions=[],  # Interventions to be added later
     analyzers=[],  # Analyzers to be added later
     use_waning=True,  # Enable waning immunity
@@ -164,7 +164,8 @@ def make_sim(label, meta):
         cv.change_beta('2021-07-01', 0.6),  # shut down
         cv.change_beta('2021-07-15', 0.3),  # shut down
         cv.change_beta('2021-10-25', 0.9),  # reopen
-        cv.change_beta('2021-11-25', 0.6)   # shut down
+        cv.change_beta('2021-11-25', 0.6),   # shut down
+        cv.change_beta('2021-02-01', 1)   # reopen
     ]
 
     p['interventions'] += beta_interventions
