@@ -94,6 +94,7 @@ ax.inf.set_title('New infections')
 ax.sev.set_title('Severe cases')
 ax.inf.legend(frameon=False)
 
+
 # Tidy up
 fig.show()
 fig.savefig(str(sc.path(figdir) / 'inf_by_variant.png'), bbox_inches='tight')
@@ -149,6 +150,7 @@ for i, inf in enumerate(df['new_infections_by_variant']):
                             color=colors[var_ax + 1], alpha=0.3)
             variant_lines.append(l2)
             ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+            ax.tick_params(axis='x', rotation=90)
 
 pl.legend([omicron_lines[0], variant_lines[0], variant_lines[1], variant_lines[2]],
           ['Omicron', 'Emerged from Omicron', 'Emerged from WT', 'New cluster'], loc='right', bbox_to_anchor=(2.2, 2),
@@ -198,7 +200,7 @@ for i, sev in enumerate(df['new_severe_by_variant']):
                                 (sev.high[v_ind, o2_day_ind:] * factor_sev),
                                 color=colors[var_ax + 1], alpha=0.3)
                 sev_lines.append(l3)
-
+            ax.tick_params(axis='x', rotation=90)
             ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 
 legend2 = pl.legend([omicron_lines[0], variant_lines[0], variant_lines[1], variant_lines[2]],
@@ -207,6 +209,7 @@ legend2 = pl.legend([omicron_lines[0], variant_lines[0], variant_lines[1], varia
 pl.legend([variant_lines[0], sev_lines[0]], ['mild', 'virulent'], loc='right', bbox_to_anchor=(2, 1.6), title='Severity of variant')
 
 pl.gca().add_artist(legend2)
+# pl.xticks(rotation = 90)
 axes[0,0].set_title(f'Introduced on \n{variant_timing[0]}')
 axes[0,1].set_title(f'Introduced on \n{variant_timing[1]}')
 axes[0,2].set_title(f'Introduced on \n{variant_timing[2]}')
@@ -215,5 +218,6 @@ axes[1,0].set_ylabel('% of Omicron peak')
 axes[2,0].set_ylabel('% of Omicron peak')
 fig.suptitle('New Severe')
 fig.subplots_adjust(right=0.75)
+
 fig.show()
 fig.savefig(str(sc.path(figdir) / 'post_omicron_sev.png'), bbox_inches='tight')
