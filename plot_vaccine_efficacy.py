@@ -10,7 +10,7 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
 
 # Load data
-sc.fonts(add='C:\\Users\\jamieco\\PycharmProjects\\avenir')
+sc.fonts(add=sc.thisdir(aspath=True) / 'avenir')
 
 # Load data
 resfolder = './results'
@@ -31,7 +31,7 @@ ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_loca
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.axvspan(res['vx_day'][0], res['vx_day'][60], alpha=0.5, color='goldenrod')
 ax.get_legend().remove()
-ax.grid()
+ax.grid(alpha=0.3)
 ax.set_title('Infections by variant and percent exposed')
 ax.set_ylim(bottom=0, top=2000000)
 
@@ -56,7 +56,7 @@ ax.annotate('Example efficacy window', xy=(0.13, -0.05), xytext=(0.13, -0.15), x
             fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
             arrowprops=dict(arrowstyle='-[, widthB=5.0, lengthB=1', lw=1.0))
-ax.grid()
+ax.grid(alpha=0.3)
 ax.set_title('Severe cases by variant')
 ax.set_ylim(bottom=0, top=200000)
 
@@ -67,9 +67,10 @@ sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic 
 sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
 ax.set_xlabel('Date')
 ax.set_ylabel('Vaccine efficacy (60 day window)')
-ax.grid()
+ax.grid(alpha=0.3)
 ax.set_title('Vaccine efficacy')
 
+sc.dateformatter()
 fig.show()
 sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
 print('Done.')
