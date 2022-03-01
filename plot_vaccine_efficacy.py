@@ -51,10 +51,11 @@ sns.lineplot(data=sev_df.reset_index(), x='Date', y='Severe', hue='Variant', ci=
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.axvspan(res['vx_day'][0], res['vx_day'][60], alpha=0.5, color='goldenrod')
-ax.annotate('Example efficacy window', xy=(0.1, 0), xytext=(0.1, -0.1), xycoords='axes fraction',
-            fontsize=12, ha='center', va='bottom',
+# ax.text(res['vx_day'][0], 100000, 'Example efficacy \nwindow')
+ax.annotate('Example efficacy window', xy=(0.13, -0.05), xytext=(0.13, -0.15), xycoords='axes fraction',
+            fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
-            arrowprops=dict(arrowstyle=']-, widthB=7.0, lengthB=1.5', lw=2.0))
+            arrowprops=dict(arrowstyle='-[, widthB=5.0, lengthB=1', lw=1.0))
 ax.grid()
 ax.set_title('Severe cases by variant')
 ax.set_ylim(bottom=0, top=200000)
@@ -67,8 +68,8 @@ sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe diseas
 ax.set_xlabel('Date')
 ax.set_ylabel('Vaccine efficacy (60 day window)')
 ax.grid()
-ax.set_title('Vaccine efficacy (if vaccinating on this date)')
+ax.set_title('Vaccine efficacy')
 
-# fig.show()
+fig.show()
 sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
 print('Done.')
