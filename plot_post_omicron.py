@@ -20,7 +20,6 @@ figdir = './figs'
 
 ncolors = 8
 from matplotlib import cm
-colors = cm.rainbow(np.linspace(0, 1, ncolors))
 # Rejig data
 d = sc.objdict()
 d_inf = 2 # Index for Delta
@@ -29,8 +28,17 @@ v_ind = 4  # Index for next variant
 o2_day_ind = 123  # Index for day after Omicron peak
 
 vaccines = list(set(df['vaccine']))
-variants = list(set(df['next_variant']))
-variant_time = list(set(df['new_variant_day']))
+variants = ['None', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
+    'Emerged from Omicron, more severe', 'Emerged from WT, more severe',
+    'New cluster, more severe'
+]
+
+variant_labels = ['No new variant', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
+    'Emerged from Omicron, more severe', 'Emerged from WT, more severe',
+    'New cluster, more severe'
+]
+
+variant_time = ['2022-02-25', '2022-04-25', '2022-08-25']
 
 keys = ['inf', 'sev']
 for key in keys:
@@ -55,6 +63,7 @@ for i, inf in enumerate(df['new_infections_by_variant']):
 #%% Plotting
 sc.options(dpi=150)
 sc.options(font='Avenir')
+colors = sc.gridcolors(ncolors)
 fig = pl.figure(figsize=(7,7))
 xoff = 0.3
 dx   = 0.65
@@ -73,22 +82,26 @@ for key in keys:
     for v,var in enumerate(variants):
         for j,day in enumerate(variant_time):
             val = d[key]['Status quo'][var][day]
-            ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j], label=day)
+            if v == 0:
+                ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j], label=day)
+            else:
+                ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j])
 
 for key in keys:
     ax[key].set_yticks(y_pos-(wd/3))
-    ax[key].set_yticklabels(variants)
-ax.inf.set_title('New infections (% of Omicron wave 1)')
-ax.sev.set_title('Severe cases (% of Omicron wave 1)')
+    ax[key].set_yticklabels(variant_labels)
+ax.inf.set_title('New infections')
+ax.sev.set_title('Severe cases')
 ax.inf.legend(frameon=False)
 
-
 # Tidy up
-# fig.show()
-sc.savefig('inf_by_variant.png')
+fig.show()
+fig.savefig(str(sc.path(figdir) / 'inf_by_variant.png'), bbox_inches='tight')
+
 
 sc.options(dpi=150)
 sc.options(font='Avenir')
+colors = cm.rainbow(np.linspace(0, 1, ncolors))
 
 new_variants_inf = [
     'Emerged from Omicron', 'Emerged from WT', 'New cluster'
