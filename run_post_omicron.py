@@ -33,7 +33,7 @@ slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0067419
                   decay_rate2=0.001764455, decay_time2=106)
 
 nab_decay_params = {
-    'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
+    # 'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
     # 'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
     # 'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
@@ -97,30 +97,43 @@ vaccines = {
         'coverage': 0,
         'day': '2022-02-15'
     },
-    'Boost after 3m (WT-based)': {
+    'Boost after 3m (WT)': {
             'vaccine': 'Pfizer',
             'interval': 90,
             'coverage': .7/30, # Based on achieving a max coverage of 55% with linear scaleup til then
     },
-    'Boost after 6m (WT-based)': {
+    'Boost after 6m (WT)': {
             'vaccine': 'Pfizer',
             'interval': 180,
             'coverage': .7/30, # Based on achieving a max coverage of 55% with linear scaleup til then
-        },
-    'Boost after 3m (Omicron-based)': {
-            'vaccine': 'Omicron-based',
+    },
+    'Omicron 1-dose after 3m': {
+            'vaccine': 'Omicron 1-dose',
             'coverage': .7/30,  # Based on achieving a max coverage of 55% with linear scaleup til then
             'interval': 90,
-        },
-    'Boost after 6m (Omicron-based)': {
-            'vaccine': 'Omicron-based',
+    },
+    'Omicron 1-dose after 6m': {
+            'vaccine': 'Omicron 1-dose',
             'coverage': .7/30,  # Based on achieving a max coverage of 55% with linear scaleup til then
             'interval': 180,
-        },
+    },
+    'Omicron 2-dose after 3m': {
+        'vaccine': 'Omicron 2-dose',
+        'coverage': .7 / 30,  # Based on achieving a max coverage of 55% with linear scaleup til then
+        'interval': 90,
+    },
+    'Omicron 2-dose after 6m': {
+        'vaccine': 'Omicron 2-dose',
+        'coverage': .7 / 30,  # Based on achieving a max coverage of 55% with linear scaleup til then
+        'interval': 180,
+    },
 }
+
+new_variant_days = ['2022-02-25', '2022-04-25', '2022-08-25']
 
 def scen_params():
     p = sc.objdict()
+    p['new_variant_day'] = new_variant_days
     p['vaccine'] = list(vaccines.keys())
     p['nab_decay'] = list(nab_decay_params.keys())
     p['next_variant'] = list(variants.keys())
@@ -174,8 +187,6 @@ def make_sim(p):
         cv.change_beta('2022-02-01', 1),  # behavior change after omicron
     ]
 
-    new_variant_day = '2022-04-25'
-
     # Add interventions
     interventions = sc.dcp(beta_interventions)
 
@@ -206,7 +217,7 @@ def make_sim(p):
     var_pars = variants[p.next_variant]
     variant_pars = sc.mergedicts(cvpar.get_variant_pars('omicron'), {'rel_beta': var_pars['rel_beta_next'],
                                                                      'rel_severe_prob': var_pars['rel_severe_next']})
-    next_variant = cv.variant(variant_pars, label='next_variant', days=new_variant_day,
+    next_variant = cv.variant(variant_pars, label='next_variant', days=p.new_variant_day,
                               n_imports=var_pars['n_imports'] * pars['pop_scale'])
 
     vx_pars = vaccines[p.vaccine]

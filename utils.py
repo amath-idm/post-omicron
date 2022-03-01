@@ -41,61 +41,31 @@ def sweep_params(sample=True):
 
 
 
-def make_vx_intv(vaccine, interval=90, day=None, coverage=1, dose4=False):
+def make_vx_intv(vaccine, interval=90, day=None, coverage=1):
     '''
     Return an age-targeted booster vaccine intervention
         * vaccine: the name of the vaccine, e.g. "pfizer"
         * day: day on which to vaccinate
         * coverage: vaccine coverage
-        * dose4: whether or not this is a 4th dose (i.e. 2nd booster for UK, in which case figure out az vs pfizer)
     '''
-
-    def get_key(val, my_dict):
-        for key, value in my_dict.items():
-            if val == value:
-                return key
 
     day = np.arange(cv.day('2022-02-15', start_date='2021-10-01'), cv.day('2022-12-15', start_date='2021-10-01')) if \
         day is None else day
-    if not dose4: # RSA, all good
-        subtarget = {'inds': lambda sim: cv.true((sim.people.doses==2) & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                         'vals': coverage}
-        if vaccine != 'Pfizer':
-            pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
-            pfizer['nab_init']['par1'] = 2
-            intv = cv.vaccinate_prob(pfizer, days=day, label='omicron-based', prob=0, subtarget=subtarget, booster=True,
-                                     do_plot=False)
-        else:
-            intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, booster=True,
-                                     do_plot=False)
-    else: # UK -- figure out az vs pfizer
-        if vaccine != 'Pfizer':
-            subtarget = {'inds': lambda sim: cv.true((sim.people.doses==3) & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                         'vals': coverage}
-            pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
-            pfizer['nab_init']['par1'] = 2
-            intv = cv.vaccinate_prob(pfizer, days=day, label='omicron-based', prob=0, subtarget=subtarget, booster=True,
-                                     do_plot=False)
-        else:
-            dose_pars = cvpar.get_vaccine_dose_pars()['pfizer']
-            variant_pars = cvpar.get_vaccine_variant_pars()['pfizer']
-            pfizer_vaccine = sc.mergedicts({'label': 'pfizer'}, sc.mergedicts(dose_pars, variant_pars))
-
-            booster_pfizer = sc.dcp(pfizer_vaccine)
-            booster_pfizer_target = {'inds': lambda sim: cv.true((sim.people.doses == 3) & (
-                        sim.people.nab[get_key('pfizer', sim['vaccine_map']) + sim['n_variants'], :] > 0) & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                                     'vals': coverage}  # Only give boosters to people who have had 3 doses of THIS vaccine
-            booster_pfizer = cv.vaccinate_prob(vaccine=booster_pfizer, prob=0, subtarget=booster_pfizer_target,
-                                               days=day, booster=True, do_plot=False)
-
-            booster_az = sc.dcp(pfizer_vaccine)
-            booster_az['label'] = 'az'
-            booster_az_target = {'inds': lambda sim: cv.true((sim.people.doses == 3) & (
-                        sim.people.nab[get_key('az', sim['vaccine_map']) + sim['n_variants'], :] > 0)  & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                                 'vals': coverage}  # Only give boosters to people who have had 2 doses of THIS vaccine
-            booster_az = cv.vaccinate_prob(vaccine=booster_az, subtarget=booster_az_target,
-                                           days=day, booster=True, prob=0, do_plot=False)
-            intv = [booster_az, booster_pfizer]
+    subtarget = {
+        'inds': lambda sim: cv.true((sim.people.doses == 2) & ((sim.t - sim.people.date_vaccinated) >= interval)),
+        'vals': coverage}
+    if vaccine == 'Omicron 1-dose':
+        pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
+        pfizer['nab_init']['par1'] = 2
+        intv = cv.vaccinate_prob(pfizer, days=day, label='omicron-1-dose', prob=0, subtarget=subtarget, booster=True,
+                                 do_plot=False)
+    elif vaccine == 'Omicron 2-dose':
+        pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
+        intv = cv.vaccinate_prob(pfizer, days=day, label='omicron-2-dose', prob=0, subtarget=subtarget, booster=False,
+                                 do_plot=False)
+    else:
+        intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, booster=True,
+                                 do_plot=False)
 
     return sc.promotetolist(intv)
 
