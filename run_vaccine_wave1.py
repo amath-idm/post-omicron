@@ -165,7 +165,7 @@ def make_sim(label, meta):
         cv.change_beta('2021-07-15', 0.3),  # shut down
         cv.change_beta('2021-10-25', 0.9),  # reopen
         cv.change_beta('2021-11-25', 0.6),   # shut down
-        cv.change_beta('2021-02-01', 1)   # reopen
+        cv.change_beta('2022-02-01', 1)   # reopen
     ]
 
     p['interventions'] += beta_interventions
