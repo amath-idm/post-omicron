@@ -51,6 +51,10 @@ sns.lineplot(data=sev_df.reset_index(), x='Date', y='Severe', hue='Variant', ci=
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.axvspan(res['vx_day'][0], res['vx_day'][60], alpha=0.5, color='goldenrod')
+ax.annotate('Example efficacy window', xy=(0.1, 0), xytext=(0.1, -0.1), xycoords='axes fraction',
+            fontsize=12, ha='center', va='bottom',
+            bbox=dict(boxstyle='square', fc='white'),
+            arrowprops=dict(arrowstyle=']-, widthB=7.0, lengthB=1.5', lw=2.0))
 ax.grid()
 ax.set_title('Severe cases by variant')
 ax.set_ylim(bottom=0, top=200000)
