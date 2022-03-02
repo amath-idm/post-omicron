@@ -33,7 +33,7 @@ slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0067419
                   decay_rate2=0.001764455, decay_time2=106)
 
 nab_decay_params = {
-    'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
+    # 'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
     # 'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
     # 'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
@@ -91,6 +91,7 @@ variants = {
     }
 }
 
+new_variant_days = ['2022-02-25', '2022-04-25', '2022-08-25']
 vaccine_prime = [0, 0.2, 0.4, 0.6, 0.8, 1]
 vaccine_boost = [0, 0.2, 0.4, 0.6, 0.8, 1]
 
@@ -109,11 +110,11 @@ def make_vx_intv(vaccine='pfizer', boost=False, day=None, coverage=1):
     if boost:
         interval = 180
         subtarget = {'inds': lambda sim: cv.true((sim.people.doses==2) & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                         'vals': coverage}
+                         'vals': coverage/90}
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, booster=True,
                                      do_plot=False)
     else:
-        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 18)), 'vals': coverage}
+        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 18)), 'vals': coverage/90}
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, do_plot=False)
     return sc.promotetolist(intv)
 
@@ -124,6 +125,7 @@ def scen_params():
     p['vaccine_prime'] = vaccine_prime
     p['nab_decay'] = list(nab_decay_params.keys())
     p['next_variant'] = list(variants.keys())
+    p['new_variant_day'] = new_variant_days
     dims = [len(v) for k, v in p.items()]
     npars = np.prod(dims)
     return p, npars
@@ -174,8 +176,6 @@ def make_sim(p):
         cv.change_beta('2022-02-01', 1),  # behavior change after omicron
     ]
 
-    new_variant_day = '2022-04-25'
-
     # Add interventions
     interventions = sc.dcp(beta_interventions)
 
@@ -206,7 +206,7 @@ def make_sim(p):
     var_pars = variants[p.next_variant]
     variant_pars = sc.mergedicts(cvpar.get_variant_pars('omicron'), {'rel_beta': var_pars['rel_beta_next'],
                                                                      'rel_severe_prob': var_pars['rel_severe_next']})
-    next_variant = cv.variant(variant_pars, label='next_variant', days=new_variant_day,
+    next_variant = cv.variant(variant_pars, label='next_variant', days=p.new_variant_day,
                               n_imports=var_pars['n_imports'] * pars['pop_scale'])
 
     future_vax_prime = make_vx_intv(coverage=p.vaccine_prime)
@@ -288,7 +288,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--nsamples', default=50, type=int)  # How many samples to run (stochastic uncertainty)
     parser.add_argument('--ncpus', default=None, type=int)  # CPUs
-    parser.add_argument('--root', default='post-omicron', type=str)
+    parser.add_argument('--root', default='post-omicron-cov-sweep', type=str)
     args = parser.parse_args()
 
     # Customize, initialize timer
@@ -364,8 +364,8 @@ if __name__ == '__main__':
                 peak_day = list(sim.results['variant']['new_infections_by_variant'][oi + 1, :]).index(
                     np.max(sim.results['variant']['new_infections_by_variant'][oi + 1, :]))
 
-        sc.saveobj(f'{resfolder}/vx_rollout_data.obj', d)
+        sc.saveobj(f'{resfolder}/{args.root}_vx_rollout_data.obj', d)
 
     # Also create and save data for making additional plots
-    plotdf = get_data_for_plots(msims, filename=f'{resfolder}/data_for_run_plot.obj')
+    plotdf = get_data_for_plots(msims, filename=f'{resfolder}/{args.root}_data_for_run_plot.obj')
     print('Done.')

@@ -180,6 +180,7 @@ def create_dfs(msim):
     exp_dfs = []
     inf_dfs = []
     sev_dfs = []
+    deaths_df = []
     nab_decays = []
     ret = []
     for sim in msim.sims:
@@ -200,6 +201,7 @@ def create_dfs(msim):
                 snap.date_severe[placebo_inds] > vx_day).sum())
             if VE_sev < 0:
                 VE_sev = 0
+            cum_deaths = sim.results['cum_deaths'][vx_day + window] - sim.results['cum_deaths'][vx_day]
             ret.append({
                 'label': sim.label,
                 'nab_decay': sim.meta['nab_decay'],
@@ -207,6 +209,7 @@ def create_dfs(msim):
                 'VE_symp': VE_symp,
                 'VE_sev': VE_sev,
                 'vx_day': sim.meta['vx']['day'],
+                'cum_deaths': cum_deaths
             })
         else:
             # New infections by variant
@@ -235,6 +238,13 @@ def create_dfs(msim):
             d['rep'] = sim['rand_seed']
             exp_dfs.append(d)
 
+            # Cumulative deaths
+            reskey = 'cum_deaths'
+            dat = sc.dcp(sim.results[reskey].values)
+            d = pd.DataFrame(dat.T, index=pd.DatetimeIndex(sim.results['date'], name='Date'),
+                             columns=['Cumulative Deaths'])
+            deaths_df.append(d)
+
     inf_df = pd.concat(inf_dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Infections'})
     inf_df['nab_decay'] = nab_decays
     sev_df = pd.concat(sev_dfs).stack().reset_index().rename(columns={'level_1': 'Variant', 0: 'Severe'})
@@ -244,11 +254,11 @@ def create_dfs(msim):
 
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
-    return inf_df, sev_df, exp_df, res
+    return inf_df, sev_df, exp_df, deaths_df, res
 
 
 if __name__ == '__main__':
-    n_reps = 20
+    n_reps = 50
     vx_res = 50
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
@@ -260,10 +270,11 @@ if __name__ == '__main__':
     msim.run()
 
     print('Processing and saving results...')
-    inf_df, sev_df, exp_df, res = create_dfs(msim)
+    inf_df, sev_df, exp_df, deaths_df, res = create_dfs(msim)
 
     sc.saveobj(f'{resfolder}/inf.obj', inf_df)
     sc.saveobj(f'{resfolder}/sev.obj', sev_df)
     sc.saveobj(f'{resfolder}/exp.obj', exp_df)
+    sc.saveobj(f'{resfolder}/deaths.obj', deaths_df)
     sc.saveobj(f'{resfolder}/res.obj', res)
     print('Done.')
