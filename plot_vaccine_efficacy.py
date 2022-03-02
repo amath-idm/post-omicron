@@ -18,8 +18,26 @@ resfolder = './results'
 inf_df = sc.loadobj((str(sc.path(resfolder) / 'inf.obj')))
 sev_df = sc.loadobj((str(sc.path(resfolder) / 'sev.obj')))
 exp_df = sc.loadobj((str(sc.path(resfolder) / 'exp.obj')))
+deaths_df = sc.loadobj((str(sc.path(resfolder) / 'deaths.obj')))
 res = sc.loadobj((str(sc.path(resfolder) / 'res.obj')))
 figdir = './figs'
+
+# Get doses per death averted ready
+window = 60
+dates = inf_df['Date']
+doses_per_death_averted = []
+for i, day in enumerate(res['vx_day']):
+    deaths_df[i] = deaths_df[i].reset_index()
+    day_ind = deaths_df[i].index[deaths_df[i]['Date'] == day]
+    end_of_window_ind = day_ind + window
+    vx_deaths = res['cum_deaths'][i]
+    vx_doses = res['cum_doses'][i]
+    no_vx_deaths = deaths_df[i].iloc[end_of_window_ind,1].values - deaths_df[i].iloc[day_ind,1].values
+    deaths_averted = no_vx_deaths - vx_deaths
+    doses_per_death_averted.append(vx_deaths/deaths_averted)
+
+res['Doses per death averted'] = doses_per_death_averted
+
 
 fig, axv = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
 
