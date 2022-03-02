@@ -4,6 +4,8 @@ Script to plot vaccine efficacy as a function of time
 '''
 
 import sciris as sc
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.dates as mdates
@@ -22,19 +24,29 @@ deaths_df = sc.loadobj((str(sc.path(resfolder) / 'deaths.obj')))
 res = sc.loadobj((str(sc.path(resfolder) / 'res.obj')))
 figdir = './figs'
 
+death_df = pd.concat(deaths_df)
+
 # Get doses per death averted ready
-window = 60
-dates = inf_df['Date']
+n_reps = len(deaths_df)
+dates = np.unique(res['vx_day'].values)
+n_dates = len(dates)
 doses_per_death_averted = []
-for i, day in enumerate(res['vx_day']):
-    deaths_df[i] = deaths_df[i].reset_index()
-    day_ind = deaths_df[i].index[deaths_df[i]['Date'] == day]
-    end_of_window_ind = day_ind + window
-    vx_deaths = res['cum_deaths'][i]
-    vx_doses = res['cum_doses'][i]
-    no_vx_deaths = deaths_df[i].iloc[end_of_window_ind,1].values - deaths_df[i].iloc[day_ind,1].values
-    deaths_averted = no_vx_deaths - vx_deaths
-    doses_per_death_averted.append(vx_deaths/deaths_averted)
+
+for rep in range(n_reps):
+    deaths_df[rep] = deaths_df[rep].reset_index()
+    for i, day in enumerate(dates):
+        day_ind = deaths_df[rep].index[deaths_df[rep]['Date'] == day]
+        index = i + n_dates*rep
+        vx_deaths = res['cum_deaths'][index]
+        vx_doses = res['cum_doses'][index]
+        no_vx_deaths = deaths_df[rep].iloc[-1]['Cumulative Deaths'] - deaths_df[rep].iloc[day_ind]['Cumulative Deaths'].values[0]
+        deaths_averted = no_vx_deaths - vx_deaths
+        doses_per = vx_doses/deaths_averted
+        if np.isinf(doses_per):
+            doses_per = 0
+        if doses_per < 0:
+            doses_per = 0
+        doses_per_death_averted.append(doses_per)
 
 res['Doses per death averted'] = doses_per_death_averted
 
@@ -47,11 +59,11 @@ sns.lineplot(data=inf_df.reset_index(), x='Date', y='Infections', hue='Variant',
 ax=ax, palette='flare')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-ax.axvspan(res['vx_day'][0], res['vx_day'][60], alpha=0.5, color='goldenrod')
-ax.get_legend().remove()
+ax.axvspan(inf_df.iloc[100]['Date'], inf_df.iloc[180]['Date'], alpha=0.5, color='goldenrod')
 ax.grid(alpha=0.3)
-ax.set_title('Infections by variant and percent exposed')
+ax.set_title('Infections by variant and percent exposed (no vaccination)')
 ax.set_ylim(bottom=0, top=2000000)
+ax.legend(bbox_to_anchor=(0.15, 1), title='Variant')
 
 # TWIN FIRST AXIS
 ax = axv[0].twinx()
@@ -68,15 +80,26 @@ ax = axv[1]
 sns.lineplot(data=sev_df.reset_index(), x='Date', y='Severe', hue='Variant', ci='sd', ax=ax, palette='flare')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-ax.axvspan(res['vx_day'][0], res['vx_day'][60], alpha=0.5, color='goldenrod')
+ax.axvspan(inf_df.iloc[100]['Date'], inf_df.iloc[180]['Date'], alpha=0.5, color='goldenrod')
+ax.get_legend().remove()
 # ax.text(res['vx_day'][0], 100000, 'Example efficacy \nwindow')
-ax.annotate('Example efficacy window', xy=(0.13, -0.05), xytext=(0.13, -0.15), xycoords='axes fraction',
+ax.annotate('Example efficacy window', xy=(0.083, -0.05), xytext=(0.083, -0.15), xycoords='axes fraction',
             fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
-            arrowprops=dict(arrowstyle='-[, widthB=5.0, lengthB=1', lw=1.0))
+            arrowprops=dict(arrowstyle='-[, widthB=0.75, lengthB=.8', lw=1.0))
 ax.grid(alpha=0.3)
-ax.set_title('Severe cases by variant')
-ax.set_ylim(bottom=0, top=200000)
+ax.set_title('Severe cases by variant and cumulative deaths (no vaccination)')
+ax.set_ylim(bottom=0, top=150000)
+
+# TWIN SECOND AXIS
+ax = axv[1].twinx()
+sns.lineplot(data=death_df.reset_index(), x='Date', y='Cumulative Deaths', ci='sd', color='k', ls='--', palette='tab10',
+                 lw=2, ax=ax)
+ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+# ax.grid()
+# ax.set_title('Exposed (%)')
+# ax.set_ylim(bottom=0, top=100)
 
 # LAST AXIS
 ax = axv[-1]
@@ -87,8 +110,23 @@ ax.set_xlabel('Date')
 ax.set_ylabel('Vaccine efficacy (60 day window)')
 ax.grid(alpha=0.3)
 ax.set_title('Vaccine efficacy')
+ax.set_ylim(bottom=0, top=1)
+ax.legend(bbox_to_anchor=(0.2, .67))
+
+# TWIN LAST AXIS
+ax = axv[-1].twinx()
+dose_per = sns.lineplot(data=res, x='vx_day', y='Doses per death averted', color='k', ls='--', palette='tab10',
+                 lw=2, ax=ax)
+dose_per.set(yscale='log')
+ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
+ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+# ax.grid()
+# ax.set_title('Exposed (%)')
+ax.set_ylim(bottom=0, top=10000)
 
 sc.dateformatter()
-fig.show()
+fig.subplots_adjust(right=0.88)
+fig.subplots_adjust(left=0.15)
+# fig.show()
 sc.savefig(str(sc.path(figdir) / 'vaccine_efficacy.png'), fig=fig)
 print('Done.')
