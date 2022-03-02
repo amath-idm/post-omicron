@@ -1,6 +1,6 @@
 
 '''
-Script to plot vaccine impact by second- vs. third-dose coverage
+Script to plot variant-chasing vaccine impact
 '''
 
 import numpy as np
