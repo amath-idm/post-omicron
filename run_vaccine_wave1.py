@@ -45,7 +45,7 @@ slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0067419
                   decay_rate2=0.001764455, decay_time2=106)
 
 nab_decay_params = {
-    'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
+    # 'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
     # 'nat_fast_vax_slow': dict(natural=fast_decay, vaccine=slow_decay),
     # 'both_slow': dict(natural=slow_decay, vaccine=slow_decay),
@@ -81,7 +81,7 @@ class vaccine_trial_arms(cv.Analyzer):
         return
 
 
-def make_vaccine_intv(day, vaccine='pfizer', coverage=0.35):
+def make_vaccine_intv(day, vaccine='pfizer', coverage=0.5):
     '''
     Return a vaccine intervention on a single day
     vaccine (str): Vaccine to implement
@@ -201,7 +201,8 @@ def create_dfs(msim):
                 snap.date_severe[placebo_inds] > vx_day).sum())
             if VE_sev < 0:
                 VE_sev = 0
-            cum_deaths = sim.results['cum_deaths'][vx_day + window] - sim.results['cum_deaths'][vx_day]
+            cum_deaths = sim.results['cum_deaths'][-1] - sim.results['cum_deaths'][vx_day]
+            cum_doses = sim.results['cum_doses'][-1] - sim.results['cum_doses'][vx_day]
             ret.append({
                 'label': sim.label,
                 'nab_decay': sim.meta['nab_decay'],
@@ -209,7 +210,8 @@ def create_dfs(msim):
                 'VE_symp': VE_symp,
                 'VE_sev': VE_sev,
                 'vx_day': sim.meta['vx']['day'],
-                'cum_deaths': cum_deaths
+                'cum_deaths': cum_deaths,
+                'cum_doses' : cum_doses
             })
         else:
             # New infections by variant
@@ -251,6 +253,7 @@ def create_dfs(msim):
     sev_df['nab_decay'] = nab_decays
     exp_df = pd.concat(exp_dfs)  
     sev_df['nab_decay'] = nab_decays
+    
 
     res = pd.DataFrame(ret)
     res['vx_day'] = pd.to_datetime(res['vx_day'])
@@ -259,7 +262,7 @@ def create_dfs(msim):
 
 if __name__ == '__main__':
     n_reps = 50
-    vx_res = 50
+    vx_res = 100
     scenarios = make_scenarios(n_reps=n_reps, vx_res=vx_res)
 
     print(f'Building {len(scenarios)} scenarios...')
