@@ -40,7 +40,7 @@ do_save = True
 figs = sc.objdict()
 axes = sc.objdict()
 
-fig2,axs2 = pl.subplots(nrows=3, ncols=3, figsize=figsize)
+fig2,axs2 = pl.subplots(nrows=3, ncols=2, figsize=figsize)
 
 
 def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None, var_name=None, row=None):
@@ -139,7 +139,7 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None
 
 def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_lab=None, time_lab=None, var_name=None, row=None):
     ''' Plot a matrix of results as a heat map '''
-    var_col_map = {'Emerged from WT, more severe': 0, 'Emerged from Omicron, more severe': 1, 'New cluster, more severe': 2}
+    var_col_map = {'Emerged from WT, more severe': 0, 'New cluster, more severe': 1}
     col = var_col_map[var_lab]
     print(f'Plotting: {var_name}, row={row}, col={col}')
     ax = axs2[row, col]
@@ -215,10 +215,10 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
     ax.axis('auto')
 
     # Tidying
-    if col == 2:
+    if col == 1:
         colorbar(fig2, im, zlabel, row)
     fig2.subplots_adjust(**pad)
-    if do_save and row == 2 and col == 2:
+    if do_save and row == 2 and col == 1:
         sc.savefig(str(sc.path(figdir) / filename), fig=fig2)
 
     return
@@ -376,8 +376,7 @@ for variant in variants:
         )
 
 
-variants_to_plot = ['Emerged from WT, more severe', 'Emerged from Omicron, more severe',
-    'New cluster, more severe'
+variants_to_plot = ['Emerged from WT, more severe', 'New cluster, more severe'
 ]
 
 for variant in variants_to_plot:

@@ -1,6 +1,6 @@
 '''
 
-Script to show trade-off between second and third dose coverage
+Script to evaluate variant chasing vaccines
 '''
 
 import numpy as np
