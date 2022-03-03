@@ -114,7 +114,7 @@ def make_vx_intv(vaccine='pfizer', boost=False, day=None, coverage=1):
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, booster=True,
                                      do_plot=False)
     else:
-        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 18)), 'vals': coverage/90}
+        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 12)), 'vals': coverage/90}
         intv = cv.vaccinate_prob(vaccine=vaccine, days=day, prob=0, subtarget=subtarget, do_plot=False)
     return sc.promotetolist(intv)
 

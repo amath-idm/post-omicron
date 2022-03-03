@@ -13,7 +13,7 @@ sc.fonts(add='C:\\Users\\jamieco\\PycharmProjects\\avenir')
 
 # Load data
 resdir = './results'
-fn = f'{str(sc.path(resdir))}/data_for_run_plot.obj'
+fn = f'{str(sc.path(resdir))}/post-omicron-cov-sweep_data_for_run_plot.obj'
 df = sc.load(fn)
 
 figdir = './figs'
@@ -27,7 +27,6 @@ o_ind = 3  # Index for Omicron
 v_ind = 4  # Index for next variant
 o2_day_ind = 123  # Index for day after Omicron peak
 
-vaccines = list(set(df['vaccine']))
 variants = ['None', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
     'Emerged from Omicron, more severe', 'Emerged from WT, more severe',
     'New cluster, more severe'
@@ -43,21 +42,19 @@ variant_time = ['2022-02-25', '2022-04-25', '2022-08-25']
 keys = ['inf', 'sev']
 for key in keys:
     d[key] = sc.objdict(defaultdict=dict)
-    for vax in vaccines:
-        d[key][vax] = sc.objdict(defaultdict=dict)
-        for var in variants:
-            d[key][vax][var] = sc.objdict(defaultdict=dict)
-            for var_date in variant_time:
-                d[key][vax][var][var_date] = sc.objdict(defaultdict=dict)
+    for var in variants:
+        d[key][var] = sc.objdict(defaultdict=dict)
+        for var_date in variant_time:
+            d[key][var][var_date] = sc.objdict(defaultdict=dict)
 
 for i, inf in enumerate(df['new_infections_by_variant']):
     var = df['next_variant'][i]
-    vax = df['vaccine'][i]
-    var_day = df['new_variant_day'][i]
-    new_infs = inf.values[:,o2_day_ind:].sum()
-    new_sevs = df['new_severe_by_variant'][i].values[:,o2_day_ind:].sum()
-    d['inf'][vax][var][var_day] = new_infs
-    d['sev'][vax][var][var_day] = new_sevs
+    if df['vaccine_boost'][i] == 0 and df['vaccine_prime'][i] == 0:
+        var_day = df['new_variant_day'][i]
+        new_infs = inf.values[:,o2_day_ind:].sum()
+        new_sevs = df['new_severe_by_variant'][i].values[:,o2_day_ind:].sum()
+        d['inf'][var][var_day] = new_infs
+        d['sev'][var][var_day] = new_sevs
 
 
 #%% Plotting
@@ -81,7 +78,7 @@ y_pos = n - 3*(np.arange(0, len(variants), 1))
 for key in keys:
     for v,var in enumerate(variants):
         for j,day in enumerate(variant_time):
-            val = d[key]['Status quo'][var][day]
+            val = d[key][var][day]
             if v == 0:
                 ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j], label=day)
             else:
@@ -132,7 +129,7 @@ x = df['datevec_sim'][o2_day_ind:]
 omicron_lines = []
 variant_lines = []
 for i, inf in enumerate(df['new_infections_by_variant']):
-    if df['vaccine'][i] == 'Status quo':
+    if df['vaccine_boost'][i] == 0 and df['vaccine_prime'][i] == 0:
         if df['next_variant'][i] in new_variants_inf:
             var = df['next_variant'][i]
             var_ax = var_ax_code[var]
@@ -175,7 +172,7 @@ omicron_lines = []
 variant_lines = []
 sev_lines = []
 for i, sev in enumerate(df['new_severe_by_variant']):
-    if df['vaccine'][i] == 'Status quo':
+    if df['vaccine_boost'][i] == 0 and df['vaccine_prime'][i] == 0:
         if df['next_variant'][i] in new_variants_sev:
             var = df['next_variant'][i]
             var_ax = var_ax_code[var]
