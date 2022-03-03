@@ -51,7 +51,7 @@ for rep in range(n_reps):
 res['Doses per death averted'] = doses_per_death_averted
 
 
-fig, axv = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+fig, axv = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
 
 # FIRST AXIS
 ax = axv[0]
@@ -77,6 +77,7 @@ ax.set_ylim(bottom=0, top=100)
 
 # SECOND AXIS
 ax = axv[1]
+ax.grid(alpha=0.3)
 sns.lineplot(data=sev_df.reset_index(), x='Date', y='Severe', hue='Variant', ci='sd', ax=ax, palette='flare')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
@@ -87,7 +88,6 @@ ax.annotate('Example efficacy window', xy=(0.083, -0.05), xytext=(0.083, -0.15),
             fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
             arrowprops=dict(arrowstyle='-[, widthB=0.75, lengthB=.8', lw=1.0))
-ax.grid(alpha=0.3)
 ax.set_title('Severe cases by variant and cumulative deaths (no vaccination)')
 ax.set_ylim(bottom=0, top=150000)
 

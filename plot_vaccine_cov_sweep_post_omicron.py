@@ -381,7 +381,7 @@ variants_to_plot = ['Emerged from WT, more severe', 'Emerged from Omicron, more 
 ]
 
 for variant in variants_to_plot:
-    var_day = '2022-08-25'
+    var_day = '2022-04-25'
 
     df_to_use = df[df['new_variant_day'] == var_day]
     df_to_use = df_to_use[df_to_use['next_variant'] == variant]

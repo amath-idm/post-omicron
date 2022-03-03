@@ -159,6 +159,7 @@ def get_data_for_plots(msims, filename='data_for_plot.obj', historical_wave=True
         df.delta_peak_sev = []
     df.new_infections_by_variant = []
     df.new_severe_by_variant = []
+    df.new_deaths = []
     df.datevecs = []
     params = msims[0].base_sim.run_info.keys()
     for param in params:
@@ -168,6 +169,7 @@ def get_data_for_plots(msims, filename='data_for_plot.obj', historical_wave=True
             df[param].append(s.base_sim.run_info[param])
         df.new_infections_by_variant.append(s.results['variant']['new_infections_by_variant'])
         df.new_severe_by_variant.append(s.results['variant']['new_severe_by_variant'])
+        df.new_deaths.append(s.results['new_deaths'])
         datevec_sim = s.results['date']
         if historical_wave:
             hist_wave = s.base_sim.get_intervention(cv.historical_wave)
