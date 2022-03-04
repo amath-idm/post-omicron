@@ -33,6 +33,9 @@ fast_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2)
 slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.006741981, decay_time1=47,
                   decay_rate2=0.001764455, decay_time2=106)
 
+very_slow_decay = dict(form='nab_growth_decay', growth_time=21, decay_rate1=0.0001764455, decay_time1=47,
+                  decay_rate2=0.0001764455, decay_time2=106)
+
 nab_decay_params = {
     # 'vax_fast_nat_slow': dict(natural=slow_decay, vaccine=fast_decay),
     'both_fast': dict(natural=fast_decay, vaccine=fast_decay),
@@ -53,6 +56,21 @@ variants = {
 new_variant_days = ['2022-08-25']
 vaccine_breadth = [0, 1]
 vaccine_durability = [0, 1]
+vaccine_prime = [0.1, 0.5, 1]
+vaccine_boost = [1]
+
+
+def update_nab_kin(sim):
+    if sim.t == 0:
+        inv_variant_map = {v: k for k, v in sim['variant_map'].items()}
+        for k, v in sim['vaccine_map'].items():
+            inv_variant_map[v] = k + sim['n_variants']
+        nvaxi = inv_variant_map['next_gen']
+        nab_kin = sim['nab_kin']
+        new_nab_kin = cvi.precompute_waning(length=len(nab_kin[0]), pars=very_slow_decay)
+        nab_kin[nvaxi] = new_nab_kin
+        sim.pars.update({'nab_kin': nab_kin})
+    return
 
 
 def make_vx_intv(vaccine='next_gen', boost=False, coverage=.5):
@@ -82,6 +100,8 @@ def scen_params():
     p = sc.objdict()
     p['vaccine_breadth'] = vaccine_breadth
     p['vaccine_durability'] = vaccine_durability
+    p['vaccine_boost'] = vaccine_boost
+    p['vaccine_prime'] = vaccine_prime
     p['nab_decay'] = list(nab_decay_params.keys())
     p['next_variant'] = list(variants.keys())
     p['new_variant_day'] = new_variant_days
@@ -170,10 +190,13 @@ def make_sim(p):
 
     if (p.vaccine_breadth + p.vaccine_durability)>0:
         vax_label = 'next_gen'
-        future_vax_prime = make_vx_intv(vaccine=vax_label)
-        future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True)
+        future_vax_prime = make_vx_intv(vaccine=vax_label, coverage=p.vaccine_prime)
+        future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True, coverage=p.vaccine_boost)
         interventions += future_vax_prime
         interventions += future_vax_boost
+
+    if p.vaccine_durability:
+        interventions += [update_nab_kin]
 
     for intervention in interventions:
         intervention.do_plot = False
@@ -203,12 +226,8 @@ def make_sim(p):
     else:
         immunity[nvi, -1] = var_pars['rel_imm_WT_next']
 
-    if p.vaccine_durability:
-        nvaxi = inv_variant_map['next_gen']
-        nab_kin = sim['nab_kin']
-        new_nab_kin = cvi.precompute_waning(length=len(nab_kin[0]), pars=slow_decay)
-        nab_kin[nvaxi] = new_nab_kin
-        pars.update({'immunity': immunity, 'nab_kin': nab_kin})
+    pars.update({'immunity': immunity})
+
 
     sim.run_info = sc.objdict()
     sim.run_info.update(p)
