@@ -55,8 +55,25 @@ variants = {
 }
 
 new_variant_days = ['2022-08-25']
-vaccine_breadth = [0, 1]
-vaccine_durability = [0, 1]
+
+next_gen_vaccine = {
+    'Status quo': {
+        'vaccine_breadth': 0,
+        'vaccine_durability': 0
+    },
+    'Broadly neutralizing': {
+        'vaccine_breadth': 1,
+        'vaccine_durability': 0
+    },
+    'Durable': {
+        'vaccine_breadth': 0,
+        'vaccine_durability': 1
+    },
+    'Broadly neutralizing and durable': {
+        'vaccine_breadth': 1,
+        'vaccine_durability': 1
+    },
+}
 vaccine_prime = [0.1, 0.5, 1]
 vaccine_boost = [1]
 
@@ -134,8 +151,7 @@ def make_tx_intv(start_day, rel_severe=0.11, coverage=1, age_min=None, age_max=N
 
 def scen_params():
     p = sc.objdict()
-    p['vaccine_breadth'] = vaccine_breadth
-    p['vaccine_durability'] = vaccine_durability
+    p['vaccine'] = list(next_gen_vaccine.keys())
     p['vaccine_boost'] = vaccine_boost
     p['vaccine_prime'] = vaccine_prime
     p['nab_decay'] = list(nab_decay_params.keys())
@@ -225,14 +241,17 @@ def make_sim(p):
     next_variant = cv.variant(variant_pars, label='next_variant', days=p.new_variant_day,
                               n_imports=var_pars['n_imports'] * pars['pop_scale'])
 
-    if (p.vaccine_breadth + p.vaccine_durability)>0:
+    vaccine_breadth = next_gen_vaccine[p.vaccine]['vaccine_breadth']
+    vaccine_durability = next_gen_vaccine[p.vaccine]['vaccine_durability']
+
+    if (vaccine_breadth + vaccine_durability)>0:
         vax_label = 'next_gen'
         future_vax_prime = make_vx_intv(vaccine=vax_label, coverage=p.vaccine_prime)
         future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True, coverage=p.vaccine_boost)
         interventions += future_vax_prime
         interventions += future_vax_boost
 
-    if p.vaccine_durability:
+    if vaccine_durability:
         interventions += [update_nab_kin]
 
     treatment = make_tx_intv(start_day='2022-02-15', **treatments[p.treatment])
@@ -261,7 +280,7 @@ def make_sim(p):
     immunity[nvi, oi] = var_pars['rel_imm_omicron_next']  # Relative immunity of next variant to omicron
     immunity[nvi, nvi] = 1
     immunity[nvi, nvi + 1] = var_pars['rel_imm_WT_next'] # Relative immunity of next variant to pfizer
-    if p.vaccine_breadth:
+    if vaccine_breadth:
         immunity[nvi, -1] = 1 # Relative immunity of next variant to next vaccine
     else:
         immunity[nvi, -1] = var_pars['rel_imm_WT_next']
