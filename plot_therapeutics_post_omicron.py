@@ -188,6 +188,15 @@ for i, prime in enumerate(vx_prime):
     z_doses = z_doses.reindex(yvals, axis=0)
     z_doses = z_doses.values
 
+    z_vaccinated = z_doses/2
+
+    # Now treated
+    z_treated = dfmean.pivot('vaccine', 'treatment', 'n_treated').reindex(xvals, axis=1)
+    z_treated = z_treated.reindex(yvals, axis=0)
+    z_treated = z_treated.values
+
+    z_vaxed_and_treated = z_treated + z_vaccinated
+
     # Now deaths
     z_deaths = dfmean.pivot('vaccine', 'treatment', 'deaths').reindex(xvals, axis=1)
     z_deaths = z_deaths.reindex(yvals, axis=0)
@@ -199,6 +208,9 @@ for i, prime in enumerate(vx_prime):
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
     # Now doses per deaths averted
     z_doses_deaths_averted = z_doses / z_deaths_averted
+
+    # Now NNT
+    z_nnt = z_vaxed_and_treated / z_deaths_averted
 
     heatmap(
         data=z_deaths,
@@ -221,10 +233,10 @@ for i, prime in enumerate(vx_prime):
     )
 
     heatmap(
-        data=z_doses_deaths_averted,
+        data=z_nnt,
         cmap=neutral_cmap,
-        zlabel='Doses per death averted',
-        suptitle=f'Doses per death averted',
+        zlabel='Individuals treated and vaccinated per death averted',
+        suptitle=f'Individuals treated and vaccinated per death averted',
         filename=f'vx_tx_rollout.png',
         row=2,
         prime_lab=prime_label

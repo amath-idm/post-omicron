@@ -50,7 +50,7 @@ df_to_use['Doses per death averted'] = df_to_use['doses']/df_to_use['Deaths aver
 df_to_use = df_to_use[df_to_use['Doses per death averted'] > 0]
 vaccine_strategy = []
 for row in range(len(df_to_use)):
-    vaccine_strategy.append(f'{int(df_to_use.iloc[row,1]*100)}% boost, {int(df_to_use.iloc[row,0]*100)}% prime')
+    vaccine_strategy.append(f'Boost {int(df_to_use.iloc[row,1]*100)}% vaccinated, prime {int(df_to_use.iloc[row,0]*100)}% unvaccinated')
 df_to_use['Coverage'] = vaccine_strategy
 
 

@@ -120,27 +120,27 @@ ncolors = 8
 from matplotlib import cm
 colors = cm.rainbow(np.linspace(0, 1, ncolors))
 ax = axv[0]
-x = df2['datevec_sim'][1:]
+x = df2['datevec_sim'][136:]
 for j, infs in enumerate(df2['new_infections_by_variant'][0]):
     if j == 3:
-        ax.plot(x, infs[1:], label=df2['imm_source'][j], color=colors[0])
-        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j,1:]), (df2['new_infections_by_variant'][0].high[j,1:]), color=colors[0], alpha=0.3)
+        ax.plot(x, infs[136:], label=df2['imm_source'][j], color=colors[0])
+        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j,136:]), (df2['new_infections_by_variant'][0].high[j,136:]), color=colors[0], alpha=0.3)
     elif j == 4:
-        ax.plot(x, infs[1:], linestyle='--', label=df2['imm_source'][j], color=colors[0])
-        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j, 1:]),
-                        (df2['new_infections_by_variant'][0].high[j, 1:]), color=colors[0], alpha=0.3)
+        ax.plot(x, infs[136:], linestyle='--', label=df2['imm_source'][j], color=colors[0])
+        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j, 136:]),
+                        (df2['new_infections_by_variant'][0].high[j, 136:]), color=colors[0], alpha=0.3)
 ax.set_ylabel('New Infections')
 ax.legend(loc='upper left')
-ax.axvline(x[136], linestyle='--', color='black')
-ax.text(x[140], 2.5e6, 'Date next generation\nvaccines would begin roll-out')
+# ax.axvline(x[136], linestyle='--', color='black')
+# ax.text(x[140], 2.5e6, 'Date next generation\nvaccines would begin roll-out')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 ax.set_title('New infections and deaths (no additional vaccination)')
 
 ax = axv[0].twinx()
-ax.plot(x, df2['new_deaths'][0].values[1:], color=colors[1])
-ax.fill_between(x, (df2['new_deaths'][0].low[1:]), (df2['new_deaths'][0].high[1:]), alpha=0.3, color=colors[1])
+ax.plot(x, df2['new_deaths'][0].values[136:], color=colors[1])
+ax.fill_between(x, (df2['new_deaths'][0].low[136:]), (df2['new_deaths'][0].high[136:]), alpha=0.3, color=colors[1])
 ax.set_ylabel('New Deaths', color=colors[1])
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 

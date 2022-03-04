@@ -31,6 +31,7 @@ n_reps = len(deaths_df)
 dates = np.unique(res['vx_day'].values)
 n_dates = len(dates)
 doses_per_death_averted = []
+nnv_tot = []
 
 for rep in range(n_reps):
     deaths_df[rep] = deaths_df[rep].reset_index()
@@ -42,13 +43,18 @@ for rep in range(n_reps):
         no_vx_deaths = deaths_df[rep].iloc[-1]['Cumulative Deaths'] - deaths_df[rep].iloc[day_ind]['Cumulative Deaths'].values[0]
         deaths_averted = no_vx_deaths - vx_deaths
         doses_per = vx_doses/deaths_averted
+        nnv = vx_doses/2/deaths_averted
         if np.isinf(doses_per):
             doses_per = 0
+            nnv = 0
         if doses_per < 0:
             doses_per = 0
+            nnv = 0
         doses_per_death_averted.append(doses_per)
+        nnv_tot.append(nnv)
 
 res['Doses per death averted'] = doses_per_death_averted
+res['NNV'] = nnv_tot
 
 
 fig, axv = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
@@ -115,7 +121,7 @@ ax.legend(bbox_to_anchor=(0.2, .67))
 
 # TWIN LAST AXIS
 ax = axv[-1].twinx()
-dose_per = sns.lineplot(data=res, x='vx_day', y='Doses per death averted', color='k', ls='--', palette='tab10',
+dose_per = sns.lineplot(data=res, x='vx_day', y='NNV', color='k', ls='--', palette='tab10',
                  lw=2, ax=ax)
 dose_per.set(yscale='log')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))

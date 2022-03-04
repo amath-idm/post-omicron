@@ -387,6 +387,7 @@ if __name__ == '__main__':
     d.perc_peak = []
     d.doses = []
     d.n_vaccinated = []
+    d.n_treated = []
     d.deaths = []
     d.infections = []
     d.severe = []
@@ -412,6 +413,8 @@ if __name__ == '__main__':
                     np.sum(sim.results['variant']['new_severe_by_variant'][oi + 1, date_after:]))
                 peak_day = list(sim.results['variant']['new_infections_by_variant'][oi + 1, :]).index(
                     np.max(sim.results['variant']['new_infections_by_variant'][oi + 1, :]))
+                tx = sim.get_intervention(treatment)
+                d.n_treated.append(tx.n_treated)
 
         sc.saveobj(f'{resfolder}/{args.root}_vx_rollout_data.obj', d)
 
