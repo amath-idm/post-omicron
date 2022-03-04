@@ -16,6 +16,16 @@ import matplotlib.ticker as mtick
 vaccine_breadth = [0, 1]
 vaccine_durability = [0, 1]
 
+vaccine_breadth_label = {
+    0: 'antigen-specific',
+    1: 'broadly neutralizing'
+}
+
+vaccine_durability_label = {
+    0: 'short-lived',
+    1: 'long-lasting'
+}
+
 # Load data
 sc.options(dpi=100)
 sc.fonts(add=sc.thisdir(aspath=True) / 'avenir')
@@ -27,6 +37,9 @@ df1 = sc.loadobj((str(sc.path(resfolder) / 'post-omicron-next-gen-vaccines_vx_ro
 df2 = sc.loadobj((str(sc.path(resfolder) / 'post-omicron-next-gen-vaccines_data_for_run_plot.obj')))
 df1 = pd.DataFrame.from_dict(df1)
 figdir = './figs'
+
+vx_breadth = df2['vaccine_breadth']
+vx_durability = df2['vaccine_durability']
 
 df_to_use = df1[df1['infections'] > 0]
 dfg = df_to_use.groupby(['vaccine_breadth', 'vaccine_durability'])
@@ -50,7 +63,7 @@ z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
 # Now doses per deaths averted
 z_doses_deaths_averted = z_doses / z_deaths_averted
 
-fig, axs = plt.subplots(4, 1, figsize=(8, 10))
+fig, axs = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
 
 for i, ax in enumerate(axs):
     x = df2['datevecs'][i]
@@ -59,9 +72,11 @@ for i, ax in enumerate(axs):
             ax.plot(x, nabs, label=df2['imm_source'][j])
         else:
             ax.plot(x, nabs)
+    ax.set_title(f'{vaccine_breadth_label[vx_breadth[i]]}, {vaccine_durability_label[vx_durability[i]]} vaccine')
 
 axs[1].legend()
 fig.show()
+sc.savefig(str(sc.path(figdir) / 'next_gen.png'), fig=fig)
 
 
 
