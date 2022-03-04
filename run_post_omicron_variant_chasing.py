@@ -50,9 +50,9 @@ variants = {
 }
 
 new_variant_days = ['2022-08-25']
-days_to_start = np.arange(5, 100, 5)
+days_to_start = np.arange(-30, 100, 5)
 vaccine_prime = [0, 0.5, 1]
-vaccine_boost = [0, 0.5, 1]
+vaccine_boost = [1]
 
 
 def make_vx_intv(vaccine='new_cluster', boost=False, day=None, coverage=1):
