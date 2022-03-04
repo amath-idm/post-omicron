@@ -136,17 +136,12 @@ ax.text(x[140], 2.5e6, 'Date next generation\nvaccines would begin roll-out')
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 
-ax.set_title('New infections and severe cases (no additional vaccination)')
+ax.set_title('New infections and deaths (no additional vaccination)')
 
 ax = axv[0].twinx()
-for j, sevs in enumerate(df2['new_severe_by_variant'][0]):
-    if j == 3:
-        ax.plot(x, sevs[1:], label=df2['imm_source'][j], color=colors[1])
-        ax.fill_between(x, (df2['new_severe_by_variant'][0].low[j,1:]), (df2['new_severe_by_variant'][0].high[j,1:]), alpha=0.3, color=colors[1])
-    elif j == 4:
-        ax.plot(x, sevs[1:], label=df2['imm_source'][j], linestyle='--', color=colors[1])
-        ax.fill_between(x, (df2['new_severe_by_variant'][0].low[j,1:]), (df2['new_severe_by_variant'][0].high[j,1:]), alpha=0.3, color=colors[1])
-ax.set_ylabel('New Severe Cases', color=colors[1])
+ax.plot(x, df2['new_deaths'][0].values[1:], color=colors[1])
+ax.fill_between(x, (df2['new_deaths'][0].low[1:]), (df2['new_deaths'][0].high[1:]), alpha=0.3, color=colors[1])
+ax.set_ylabel('New Deaths', color=colors[1])
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 colors = sc.gridcolors(5)
