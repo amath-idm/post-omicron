@@ -8,6 +8,7 @@ import sciris as sc
 import pandas as pd
 import covasim as cv
 import covasim.parameters as cvpar
+import covasim.immunity as cvi
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -63,7 +64,7 @@ def make_vx_intv(vaccine='next_gen', boost=False, coverage=.5):
         * coverage: vaccine coverage
     '''
 
-    day = np.arange(cv.day('2022-02-15', start_date='2021-10-01'), cv.day('2022-12-15', start_date='2021-10-01'))
+    day = np.arange(cv.day('2022-02-15', start_date='2021-10-01'), cv.day('2022-05-15', start_date='2021-10-01'))
 
     if boost:
         interval = 180
@@ -167,15 +168,13 @@ def make_sim(p):
     next_variant = cv.variant(variant_pars, label='next_variant', days=p.new_variant_day,
                               n_imports=var_pars['n_imports'] * pars['pop_scale'])
 
-    if (p.vaccine_breadth + p.vaccine_durability) == 0:
-        vax_label = 'pfizer'
-    else:
+    if (p.vaccine_breadth + p.vaccine_durability)>0:
         vax_label = 'next_gen'
-    future_vax_prime = make_vx_intv(vaccine=vax_label)
-    future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True)
+        future_vax_prime = make_vx_intv(vaccine=vax_label)
+        future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True)
+        interventions += future_vax_prime
+        interventions += future_vax_boost
 
-    interventions += future_vax_prime
-    interventions += future_vax_boost
     for intervention in interventions:
         intervention.do_plot = False
 
@@ -207,7 +206,7 @@ def make_sim(p):
     if p.vaccine_durability:
         nvaxi = inv_variant_map['next_gen']
         nab_kin = sim['nab_kin']
-        new_nab_kin = cv.precompute_waning(length=len(nab_kin[0]), pars=slow_decay)
+        new_nab_kin = cvi.precompute_waning(length=len(nab_kin[0]), pars=slow_decay)
         nab_kin[nvaxi] = new_nab_kin
         pars.update({'immunity': immunity, 'nab_kin': nab_kin})
 
