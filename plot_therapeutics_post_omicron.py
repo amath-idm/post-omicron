@@ -6,10 +6,134 @@ Script to plot combo of therapeutics and next generation vaccines
 import sciris as sc
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import matplotlib.dates as mdates
-import matplotlib.ticker as mtick
+import matplotlib.pyplot as pl
+
+
+# Plot options
+pad = dict(
+    right  = 0.88,
+    left   = 0.15,
+    bottom = 0.17,
+    top    = 0.95,
+    hspace = 0.1,
+    wspace = 0.2,
+)
+cax_pos = [0.9, 0.705, 0.03, 0.25]
+figsize = (16,12)
+
+bad_cmap     = 'magma_r'
+good_cmap    = 'BuGn'
+neutral_cmap = 'parula'
+figdir = './figs'
+
+sc.options(dpi=100)
+sc.fonts(add=sc.thisdir(aspath=True) / 'avenir')
+sc.options(font='Avenir')
+do_show = True
+do_save = True
+
+# Create the fig
+fig,axs = pl.subplots(nrows=3, ncols=3, figsize=figsize)
+
+def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, prime_lab=None, row=None):
+    ''' Plot a matrix of results as a heat map '''
+
+    prime_col_map = {'Boost 100% vaccinated, prime 10% unvaccinated': 0,
+                     'Boost 100% vaccinated, prime 50% unvaccinated': 1,
+                     'Boost 100% vaccinated, prime 100% unvaccinated': 2}
+    col = prime_col_map[prime_lab]
+    print(f'Plotting: {prime_lab}, row={row}, col={col}')
+    ax = axs[row, col]
+
+    # Remove non-significant data
+    if zlabel != 'Cumulative deaths':
+        for i in x:
+            for j in y:
+                if z_deaths_ttest[j, i] > 0.05:
+                    data[j, i] = np.nan  # To turn off these cells
+
+        data[0,0] = np.nan
+
+    # Plot main axes
+    im = ax.imshow(data, cmap=cmap, origin='lower')
+
+    # Reconcile color limits
+    cmin, cmax = im.get_clim()
+    crossover = (cmax - cmin) * threshold + cmin
+    if col > 0:
+        other_im = axs[row, 0].get_images()[0]
+        other_cmin, other_cmax = other_im.get_clim()
+        cmax = max(cmax, other_cmax)
+        im.set_clim((0, cmax))
+        other_im.set_clim(0, cmax)
+        crossover = (cmax - other_cmin) * threshold + other_cmin
+
+    # Handle labels
+    for i in x:
+        for j in y:
+
+            # Label text
+            k = data[j, i]
+            if zlabel == 'Cumulative deaths':
+                label = f'{k:0,.0f}'
+            else:
+                if (j+i) == 0:
+                    label = 'ref'
+                else:
+                    if not np.isfinite(k):
+                        label = 'NS'
+                    else:
+                        label = f'{k:0,.0f}'
+
+                        if 'Percent' in suptitle:
+                            if (j+i) > 0:
+                                label += '%'
+
+            # Label color
+            if cmap in ['parula']:
+                color = 'w' if k < crossover else 'k'
+            elif cmap in ['magma_r', 'BuGn']:
+                color = 'k' if (np.isnan(k) or (k < crossover)) else 'w'
+            else:
+                errormsg = f'Please define dark-light ordering for {cmap}'
+                raise ValueError(errormsg)
+            ax.text(i, j, label, ha='center', va='center', c=color)
+
+    if row == 2:
+        ax.set_xticks(x, xvals, rotation=90)
+        ax.set_xlabel('Therapeutic strategy', fontweight='bold')
+    else:
+        ax.set_xticks([])
+    if row == 0:
+        ax.set_title(f'{prime_lab}')
+    if col == 0:
+        ax.set_yticks(y, yvals)
+        ax.set_ylabel('Vaccine strategy', fontweight='bold')
+    else:
+        ax.set_yticks([])
+    sc.boxoff(ax=ax)
+    ax.axis('auto')
+
+    # Tidying
+    if col == 2:
+        colorbar(fig, im, zlabel, row)
+    fig.subplots_adjust(**pad)
+    if do_save and row == 2 and col == 2:
+        sc.savefig(str(sc.path(figdir) / filename), fig=fig)
+
+    return
+
+
+def colorbar(fig, im, label, row):
+    ''' Add a colorbar to the plot '''
+    cbargs = dict(labelpad=15, rotation=270, fontweight='bold')
+    cpos = sc.dcp(cax_pos)
+    cpos[1] -= row*0.268
+    cax = fig.add_axes(cpos)
+    cb = fig.colorbar(im, ticklocation='right', orientation='vertical', cax=cax)
+    cb.set_label(label, **cbargs)
+    sc.commaticks(cax)
+    return
 
 # Load data
 sc.options(dpi=100)
@@ -18,164 +142,92 @@ sc.options(font='Avenir')
 
 # Load data
 resfolder = './results'
-df1 = sc.loadobj((str(sc.path(resfolder) / 'post-omicron-therapeutics_vx_rollout_data.obj')))
-df2 = sc.loadobj((str(sc.path(resfolder) / 'post-omicron-therapeutics_data_for_run_plot.obj')))
-df1 = pd.DataFrame.from_dict(df1)
+
+df = sc.loadobj((str(sc.path(resfolder) / 'post-omicron-therapeutics_vx_rollout_data.obj')))
+df = pd.DataFrame.from_dict(df)
 figdir = './figs'
 
-vx_breadth = list(set(df2['vaccine_breadth']))
-vx_durability = list(set(df2['vaccine_durability']))
-vx_prime = list(set(df2['vaccine_prime']))
-tx = ['None', 'All symptomatic', '60+ symptomatic']
+vx_prime = list(set(df['vaccine_prime']))
+treatments = ['None', '30% of 60+ symptomatic', '30% of 18+ symptomatic']
+vx_prime_labels = ['Boost 100% vaccinated, prime 10% unvaccinated', 'Boost 100% vaccinated, prime 50% unvaccinated', 'Boost 100% vaccinated, prime 100% unvaccinated']
+vx_labels = ['Status quo', 'Durable', 'Broadly neutralizing', 'Broadly neutralizing and durable']
 
-z_perc_deaths_averted_dict = []
-z_doses_deaths_averted_dict = []
-for prime in vx_prime:
+for i, prime in enumerate(vx_prime):
+    df_to_use = df[df['vaccine_prime'] == prime]
+    prime_label = vx_prime_labels[i]
 
-    df_to_use = df1[df1['vaccine_prime'] == prime]
-    dfg = df_to_use.groupby(['vaccine_breadth', 'vaccine_durability'])
+    yvals = vx_labels
+    xvals = treatments
+    y = np.arange(len(yvals))
+    x = np.arange(len(xvals))
+
+    from scipy.stats import ttest_ind
+
+    z_deaths_ttest = np.full((len(yvals), len(xvals)), fill_value=0, dtype=np.float32)
+
+    for i, vx in enumerate(yvals):
+        for j, tx in enumerate(xvals):
+            status_quo = df_to_use[df_to_use['vaccine'] == 'Status quo']
+            status_quo = status_quo[status_quo['treatment'] == 'None']
+            if i > 0:
+                comparison = df_to_use[df_to_use['vaccine'] == vx]
+                comparison = comparison[comparison['treatment'] == tx]
+                res = ttest_ind(status_quo['deaths'], comparison['deaths'])
+                z_deaths_ttest[i, j] = res.pvalue
+
+    # Do the grouping
+    df_to_use = df_to_use[df_to_use['deaths'] > 0]
+    df_to_use = df_to_use[df_to_use['infections'] > 0]
+
+    dfg = df_to_use.groupby(['vaccine', 'treatment'])
     dfmean = dfg.mean().reset_index()
     dfmedian = dfg.median().reset_index()
 
     # First up, doses
-    z_doses = dfmean.pivot('vaccine_breadth', 'vaccine_durability', 'doses').reindex()
-    z_doses = z_doses.reindex()
+    z_doses = dfmean.pivot('vaccine', 'treatment', 'doses').reindex(xvals, axis=1)
+    z_doses = z_doses.reindex(yvals, axis=0)
     z_doses = z_doses.values
 
     # Now deaths
-    z_deaths = dfmean.pivot('vaccine_breadth', 'vaccine_durability', 'deaths').reindex()
-    z_deaths = z_deaths.reindex()
+    z_deaths = dfmean.pivot('vaccine', 'treatment', 'deaths').reindex(xvals, axis=1)
+    z_deaths = z_deaths.reindex(yvals, axis=0)
     z_deaths = z_deaths.values
 
     # Deaths averted
     z_deaths_averted = z_deaths[0, 0] - z_deaths
     # Percent of deaths averted
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
-    z_perc_deaths_averted_dict.append(z_perc_deaths_averted)
     # Now doses per deaths averted
     z_doses_deaths_averted = z_doses / z_deaths_averted
-    z_doses_deaths_averted_dict.append(z_doses_deaths_averted)
 
+    heatmap(
+        data=z_deaths,
+        cmap=bad_cmap,
+        zlabel='Cumulative deaths',
+        suptitle=f'Cumulative deaths,',
+        filename=f'vx_tx_rollout.png',
+        row=0,
+        prime_lab=prime_label
+    )
 
-#%% Plotting
+    heatmap(
+        data=z_perc_deaths_averted,
+        cmap=good_cmap,
+        zlabel='Percent of deaths averted',
+        suptitle=f'Percent of deaths averted,',
+        filename=f'vx_tx_rollout.png',
+        row=1,
+        prime_lab=prime_label
+    )
 
-# fig, axs = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
-#
-# for i, ax in enumerate(axs):
-#     x = df2['datevecs'][i]
-#     for j, nabs in enumerate(df2['pop_nabs'][i]):
-#         if i == 1:
-#             ax.plot(x, nabs, label=df2['imm_source'][j])
-#         else:
-#             ax.plot(x, nabs)
-#     ax.set_title(f'{vaccine_breadth_label[vx_breadth[i]]}, {vaccine_durability_label[vx_durability[i]]} vaccine')
-#
-# axs[1].legend()
-# fig.show()
-# sc.savefig(str(sc.path(figdir) / 'pop_nabs_next_gen.png'), fig=fig)
-#
-# fig, axs = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
-#
-# for i, ax in enumerate(axs):
-#     x = df2['datevec_sim'][1:]
-#     for j, infs in enumerate(df2['new_infections_by_variant'][i]):
-#         if i == 1:
-#             ax.plot(x, infs[1:], label=df2['imm_source'][j])
-#         else:
-#             ax.plot(x, infs[1:])
-#     ax.set_title(f'{vaccine_breadth_label[vx_breadth[i]]}, {vaccine_durability_label[vx_durability[i]]} vaccine')
-#     ax.set_ylabel('New Infections')
-#     ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
-#     ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-#
-#     ax = axs[i].twinx()
-#     for j, sevs in enumerate(df2['new_severe_by_variant'][i]):
-#         ax.plot(x, sevs[1:], linestyle='--')
-#     ax.set_ylabel('New Severe Cases')
-#     ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-#
-# axs[1].legend()
-# fig.show()
-# sc.savefig(str(sc.path(figdir) / 'infs_next_gen.png'), fig=fig)
-#
-#
-fig, axv = plt.subplots(3, 1, figsize=(8, 10))
-
-# FIRST up TS with no new vaccination
-ncolors = 8
-from matplotlib import cm
-colors = cm.rainbow(np.linspace(0, 1, ncolors))
-ax = axv[0]
-x = df2['datevec_sim'][1:]
-for j, infs in enumerate(df2['new_infections_by_variant'][0]):
-    if j == 3:
-        ax.plot(x, infs[1:], label=df2['imm_source'][j], color=colors[0])
-        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j,1:]), (df2['new_infections_by_variant'][0].high[j,1:]), color=colors[0], alpha=0.3)
-    elif j == 4:
-        ax.plot(x, infs[1:], linestyle='--', label=df2['imm_source'][j], color=colors[0])
-        ax.fill_between(x, (df2['new_infections_by_variant'][0].low[j, 1:]),
-                        (df2['new_infections_by_variant'][0].high[j, 1:]), color=colors[0], alpha=0.3)
-ax.set_ylabel('New Infections')
-ax.legend(loc='upper left')
-ax.axvline(x[136], linestyle='--', color='black')
-ax.text(x[140], 2.5e6, 'Date next generation\nvaccines would begin roll-out')
-ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
-ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-
-ax.set_title('New infections and deaths (no additional vaccination)')
-
-ax = axv[0].twinx()
-ax.plot(x, df2['new_deaths'][0].values[1:], color=colors[1])
-ax.fill_between(x, (df2['new_deaths'][0].low[1:]), (df2['new_deaths'][0].high[1:]), alpha=0.3, color=colors[1])
-ax.set_ylabel('New Deaths', color=colors[1])
-ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-
-colors = sc.gridcolors(5)
-
-ax = axv[1]
-# Plot bar charts
-n = 3*3
-wd=0.8
-y_pos = n - 3*(np.arange(0, 3, 1))
-ax.barh(y_pos[0]-(wd*0), z_perc_deaths_averted_dict[0][0,1], color=colors[0], label='Durable')
-ax.barh(y_pos[0]-(wd*1), z_perc_deaths_averted_dict[0][1,0], color=colors[1], label='Broadly neutralizing')
-ax.barh(y_pos[0]-(wd*2), z_perc_deaths_averted_dict[0][1,1], color=colors[2], label='Durable & broadly neutralizing')
-ax.barh(y_pos[1]-(wd*0), z_perc_deaths_averted_dict[1][0,1], color=colors[0])
-ax.barh(y_pos[1]-(wd*1), z_perc_deaths_averted_dict[1][1,0], color=colors[1])
-ax.barh(y_pos[1]-(wd*2), z_perc_deaths_averted_dict[1][1,1], color=colors[2])
-ax.barh(y_pos[2]-(wd*0), z_perc_deaths_averted_dict[2][0,1], color=colors[0])
-ax.barh(y_pos[2]-(wd*1), z_perc_deaths_averted_dict[2][1,0], color=colors[1])
-ax.barh(y_pos[2]-(wd*2), z_perc_deaths_averted_dict[2][1,1], color=colors[2])
-ax.set_yticks(y_pos-(wd/3))
-ax.set_yticklabels(['Boost 100% vaccinated,\nprime 10% unvaccinated', 'Boost 100% vaccinated,\nprime 50% unvaccinated', 'Boost 100% vaccinated,\nprime 100% unvaccinated'])
-ax.set_xlabel('% of deaths averted')
-
-ax.legend(title='Next generation vaccine')
-
-ax = axv[2]
-# Plot bar charts
-ax.barh(y_pos[0]-(wd*0), z_doses_deaths_averted_dict[0][0,1], color=colors[0], label='Durable')
-ax.barh(y_pos[0]-(wd*1), z_doses_deaths_averted_dict[0][1,0], color=colors[1], label='Broadly neutralizing')
-ax.barh(y_pos[0]-(wd*2), z_doses_deaths_averted_dict[0][1,1], color=colors[2], label='Durable & broadly neutralizing')
-ax.barh(y_pos[1]-(wd*0), z_doses_deaths_averted_dict[1][0,1], color=colors[0])
-ax.barh(y_pos[1]-(wd*1), z_doses_deaths_averted_dict[1][1,0], color=colors[1])
-ax.barh(y_pos[1]-(wd*2), z_doses_deaths_averted_dict[1][1,1], color=colors[2])
-ax.barh(y_pos[2]-(wd*0), z_doses_deaths_averted_dict[2][0,1], color=colors[0])
-ax.barh(y_pos[2]-(wd*1), z_doses_deaths_averted_dict[2][1,0], color=colors[1])
-ax.barh(y_pos[2]-(wd*2), z_doses_deaths_averted_dict[2][1,1], color=colors[2])
-ax.set_yticks(y_pos-(wd/3))
-ax.set_yticklabels(['Boost 100% vaccinated,\nprime 10% unvaccinated', 'Boost 100% vaccinated,\nprime 50% unvaccinated', 'Boost 100% vaccinated,\nprime 100% unvaccinated'])
-ax.set_xlabel('Doses per death averted')
-ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-
-fig.subplots_adjust(left=0.25)
-fig.subplots_adjust(right=0.85)
-fig.show()
-sc.savefig(str(sc.path(figdir) / 'next_gen_vx.png'), fig=fig)
-
-
-
-
-
+    heatmap(
+        data=z_doses_deaths_averted,
+        cmap=neutral_cmap,
+        zlabel='Doses per death averted',
+        suptitle=f'Doses per death averted',
+        filename=f'vx_tx_rollout.png',
+        row=2,
+        prime_lab=prime_label
+    )
 
 print('Done')

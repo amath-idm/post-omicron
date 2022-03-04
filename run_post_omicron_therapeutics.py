@@ -83,13 +83,13 @@ treatments = {
         'age_min': None,
         'age_max': None
     },
-    'All symptomatic': {
-        'coverage': 0.1,
+    '30% of 18+ symptomatic': {
+        'coverage': 0.3,
         'age_min': None,
         'age_max': None
     },
-    '60+ symptomatic': {
-        'coverage': 0.1,
+    '30% of 60+ symptomatic': {
+        'coverage': 0.3,
         'age_min': 60,
         'age_max': None
     }
