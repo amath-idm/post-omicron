@@ -126,7 +126,7 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, prime_lab=Non
 
 def colorbar(fig, im, label, row):
     ''' Add a colorbar to the plot '''
-    cbargs = dict(labelpad=15, rotation=270, fontweight='bold')
+    cbargs = dict(labelpad=25, rotation=270, fontweight='bold')
     cpos = sc.dcp(cax_pos)
     cpos[1] -= row*0.268
     cax = fig.add_axes(cpos)
@@ -187,8 +187,9 @@ for i, prime in enumerate(vx_prime):
     z_doses = dfmean.pivot('vaccine', 'treatment', 'doses').reindex(xvals, axis=1)
     z_doses = z_doses.reindex(yvals, axis=0)
     z_doses = z_doses.values
+    z_additional_doses = z_doses - z_doses[0, 0]
 
-    z_vaccinated = z_doses/2
+    z_vaccinated = z_additional_doses/2
 
     # Now treated
     z_treated = dfmean.pivot('vaccine', 'treatment', 'n_treated').reindex(xvals, axis=1)
@@ -235,8 +236,8 @@ for i, prime in enumerate(vx_prime):
     heatmap(
         data=z_nnt,
         cmap=neutral_cmap,
-        zlabel='Individuals treated and vaccinated per death averted',
-        suptitle=f'Individuals treated and vaccinated per death averted',
+        zlabel='Individuals treated and/or\nvaccinated per death averted',
+        suptitle=f'Individuals treated and/or\nvaccinated per death averted',
         filename=f'vx_tx_rollout.png',
         row=2,
         prime_lab=prime_label

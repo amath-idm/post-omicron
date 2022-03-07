@@ -55,6 +55,7 @@ for prime in vx_prime:
     z_doses = dfmean.pivot('vaccine_breadth', 'vaccine_durability', 'doses').reindex()
     z_doses = z_doses.reindex()
     z_doses = z_doses.values
+    z_additional_doses = z_doses - z_doses[0, 0]
 
     # Now deaths
     z_deaths = dfmean.pivot('vaccine_breadth', 'vaccine_durability', 'deaths').reindex()
@@ -67,7 +68,7 @@ for prime in vx_prime:
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
     z_perc_deaths_averted_dict.append(z_perc_deaths_averted)
     # Now doses per deaths averted
-    z_doses_deaths_averted = z_doses / z_deaths_averted
+    z_doses_deaths_averted = z_additional_doses / z_deaths_averted
     z_doses_deaths_averted_dict.append(z_doses_deaths_averted)
 
 

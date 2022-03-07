@@ -32,9 +32,14 @@ variants = ['None', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
     'New cluster, more severe'
 ]
 
+variants_inf = ['None', 'Emerged from Omicron', 'Emerged from WT', 'New cluster']
+
 variant_labels = ['No new variant', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
     'Emerged from Omicron, more severe', 'Emerged from WT, more severe',
     'New cluster, more severe'
+]
+
+variant_inf_labels = ['No new variant', 'Emerged from Omicron', 'Emerged from WT', 'New cluster'
 ]
 
 variant_time = ['2022-02-25', '2022-04-25', '2022-08-25']
@@ -70,26 +75,42 @@ ax.inf = fig.add_axes([xoff, 0.55, dx, dy])
 ax.sev = fig.add_axes([xoff, 0.05, dx, dy])
 
 # Plot bar charts
+n = len(variants_inf)*len(variant_time)
+# Set the width of the bars
+wd = .8
+y_pos = n - 3*(np.arange(0, len(variants_inf), 1))
+
+for v, var in enumerate(variants_inf):
+    for j, day in enumerate(variant_time):
+        val = d['inf'][var][day]
+        if v == 0:
+            ax['inf'].barh(y_pos[v] - (wd * j), val, color=colors[j], label=day)
+        else:
+            ax['inf'].barh(y_pos[v] - (wd * j), val, color=colors[j])
+
+ax['inf'].set_yticks(y_pos-(wd/3))
+ax['inf'].set_yticklabels(variant_inf_labels)
+
 n = len(variants)*len(variant_time)
 # Set the width of the bars
-wd = 1
+wd = .8
 y_pos = n - 3*(np.arange(0, len(variants), 1))
 
-for key in keys:
-    for v,var in enumerate(variants):
-        for j,day in enumerate(variant_time):
-            val = d[key][var][day]
-            if v == 0:
-                ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j], label=day)
-            else:
-                ax[key].barh(y_pos[v] - (wd*j), val, color=colors[j])
+for v, var in enumerate(variants):
+    for j, day in enumerate(variant_time):
+        val = d['sev'][var][day]
+        if v == 0:
+            ax['sev'].barh(y_pos[v] - (wd * j), val, color=colors[j], label=day)
+        else:
+            ax['sev'].barh(y_pos[v] - (wd * j), val, color=colors[j])
 
-for key in keys:
-    ax[key].set_yticks(y_pos-(wd/3))
-    ax[key].set_yticklabels(variant_labels)
+ax['sev'].set_yticks(y_pos-(wd/3))
+ax['sev'].set_yticklabels(variant_labels)
+# ax.inf.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+# ax.sev.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.inf.set_title('New infections')
 ax.sev.set_title('Severe cases')
-ax.inf.legend(frameon=False)
+ax.sev.legend(frameon=False, title='Date of next variant introduction')
 
 
 # Tidy up

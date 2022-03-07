@@ -329,6 +329,7 @@ for variant in variants:
         z_doses = dfmean.pivot('vaccine_boost', 'vaccine_prime', 'doses').reindex()
         z_doses = z_doses.reindex()
         z_doses = z_doses.values
+        z_additional_doses = z_doses - z_doses[0,0]
 
         # Now deaths
         z_deaths = dfmean.pivot('vaccine_boost', 'vaccine_prime', 'deaths').reindex()
@@ -340,7 +341,7 @@ for variant in variants:
         # Percent of deaths averted
         z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
         # Now doses per deaths averted
-        z_doses_deaths_averted = z_doses / z_deaths_averted
+        z_doses_deaths_averted = z_additional_doses / z_deaths_averted
 
         heatmap(
             data=z_deaths,
@@ -420,6 +421,7 @@ for variant in variants_to_plot:
     z_doses = dfmean.pivot('vaccine_boost', 'vaccine_prime', 'doses').reindex()
     z_doses = z_doses.reindex()
     z_doses = z_doses.values
+    z_additional_doses = z_doses - z_doses[0, 0]
 
     # Now deaths
     z_deaths = dfmean.pivot('vaccine_boost', 'vaccine_prime', 'deaths').reindex()
@@ -431,7 +433,7 @@ for variant in variants_to_plot:
     # Percent of deaths averted
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
     # Now doses per deaths averted
-    z_doses_deaths_averted = z_doses / z_deaths_averted
+    z_doses_deaths_averted = z_additional_doses / z_deaths_averted
 
     heatmap_by_var(
         data=z_deaths,
