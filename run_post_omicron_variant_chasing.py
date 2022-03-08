@@ -50,7 +50,7 @@ variants = {
 }
 
 new_variant_days = ['2022-08-25']
-days_to_start = np.arange(-30, 100, 5)
+days_to_start = np.arange(-60, 100, 5)
 vaccine_prime = [0, 0.5, 1]
 vaccine_boost = [1]
 
