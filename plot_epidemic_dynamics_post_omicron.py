@@ -44,7 +44,7 @@ variant_inf_labels = ['No new variant', 'Emerged from Omicron', 'Emerged from WT
 
 variant_time = ['2022-02-25', '2022-04-25', '2022-08-25']
 
-keys = ['inf', 'sev']
+keys = ['inf', 'sev', 'inf_ci']
 for key in keys:
     d[key] = sc.objdict(defaultdict=dict)
     for var in variants:
@@ -57,8 +57,11 @@ for i, inf in enumerate(df['new_infections_by_variant']):
     if df['vaccine_boost'][i] == 0 and df['vaccine_prime'][i] == 0:
         var_day = df['new_variant_day'][i]
         new_infs = inf.values[:,o2_day_ind:].sum()
+        new_infs_high = inf.high[:,o2_day_ind:].sum()
+        new_infs_low = inf.low[:,o2_day_ind:].sum()
         new_sevs = df['new_severe_by_variant'][i].values[:,o2_day_ind:].sum()
         d['inf'][var][var_day] = new_infs
+        d['inf_ci'][var][var_day] = new_infs_high-new_infs_low
         d['sev'][var][var_day] = new_sevs
 
 
@@ -179,7 +182,7 @@ axes[0,2].set_title(f'Introduced on \n{variant_timing[2]}')
 axes[0,0].set_ylabel('% of Omicron peak')
 axes[1,0].set_ylabel('% of Omicron peak')
 axes[2,0].set_ylabel('% of Omicron peak')
-fig.suptitle('New Infections')
+# fig.suptitle('New Infections')
 fig.subplots_adjust(right=0.75)
 fig.show()
 fig.savefig(str(sc.path(figdir) / 'post_omicron_inf.png'), bbox_inches='tight')
@@ -234,7 +237,7 @@ axes[0,2].set_title(f'Introduced on \n{variant_timing[2]}')
 axes[0,0].set_ylabel('% of Omicron peak')
 axes[1,0].set_ylabel('% of Omicron peak')
 axes[2,0].set_ylabel('% of Omicron peak')
-fig.suptitle('New Severe')
+# fig.suptitle('New Severe')
 fig.subplots_adjust(right=0.75)
 
 fig.show()
@@ -249,21 +252,22 @@ fig, ax = pl.subplots(figsize=(7,7))
 # Plot bar charts
 n = len(variants_inf)
 # Set the width of the bars
-y_pos = (np.arange(0, len(variants_inf), 1))
+y_pos = n-(np.arange(0, len(variants_inf), 1))
 
 for v, var in enumerate(variants_inf):
     for j, day in enumerate(variant_time):
         if j == 0:
-            val = d['inf'][var][day]
-            ax.bar(y_pos[v], val, color=colors[j])
+            val = d['inf'][var][day]/1e6
+            err = d['inf_ci'][var][day]/1e6/2
+            ax.barh(y_pos[v], val, xerr=err, capsize=7, color=colors[j])
 
-ax.set_xticks(y_pos)
-ax.set_xticklabels(variant_inf_labels, rotation=90)
-ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
-ax.set_ylabel('Cumulative new infections')
-ax.set_xlabel('New variant')
-fig.subplots_adjust(bottom=0.28)
-fig.subplots_adjust(left=0.2)
+ax.set_yticks(y_pos)
+ax.set_yticklabels(variant_inf_labels)
+ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+ax.set_xlabel('Cumulative new infections (millions)')
+ax.set_ylabel('New variant')
+# fig.subplots_adjust(bottom=0.28)
+fig.subplots_adjust(left=0.3)
 # Tidy up
 fig.show()
 fig.savefig(str(sc.path(figdir) / 'inf_by_variant_v2.png'), bbox_inches='tight')

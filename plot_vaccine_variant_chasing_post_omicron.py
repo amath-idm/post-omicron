@@ -35,8 +35,6 @@ n_reps = 50
 n_days = len(days_to_start)
 total = n_reps * n_days
 
-doses = df1['doses'].iloc[600:649].values
-
 deaths_no_vx = (df1['deaths'].iloc[0:total]).values
 deaths_averted = [0]*total
 perc_deaths_averted = [0]*total
