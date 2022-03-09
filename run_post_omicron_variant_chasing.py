@@ -317,7 +317,7 @@ if __name__ == '__main__':
                 d.perc_peak.append(
                     np.max(sim.results['variant']['new_infections_by_variant'][oi, :]) / np.max(
                         sim.results['variant']['new_infections_by_variant'][di, :]))
-                date_after = np.argmax(sim.results['date'] == sc.date('2022-08-25'))
+                date_after = np.argmax(sim.results['date'] == sc.date('2022-06-01'))
                 d.deaths.append(np.sum(sim.results['new_deaths'][date_after:]))
                 d.doses.append(np.sum(sim.results['new_doses'][date_after:]))
                 d.n_vaccinated.append(np.sum(sim.results['new_vaccinated'][date_after:]))

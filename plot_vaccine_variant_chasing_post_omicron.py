@@ -35,6 +35,8 @@ n_reps = 50
 n_days = len(days_to_start)
 total = n_reps * n_days
 
+doses = df1['doses'].iloc[600:649].values
+
 deaths_no_vx = (df1['deaths'].iloc[0:total]).values
 deaths_averted = [0]*total
 perc_deaths_averted = [0]*total
@@ -97,8 +99,8 @@ ax.grid(alpha=0.3)
 ax.get_legend().remove()
 ax.set_xlabel('Days from variant introduction to vaccine delivery')
 ax.set_title('Doses per death averted')
-
+fig.tight_layout(pad=3.0)
 fig.show()
 # ax.set_ylim(bottom=0, top=2000000)
-sc.savefig(str(sc.path(figdir) / 'variant_chasing_v2.png'), fig=fig)
+sc.savefig(str(sc.path(figdir) / 'variant_chasing.png'), fig=fig)
 print('Done')
