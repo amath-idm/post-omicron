@@ -37,11 +37,14 @@ total = n_reps * n_days
 
 deaths_no_vx = (df1['deaths'].iloc[0:total]).values
 deaths_averted = [0]*total
+perc_deaths_averted = [0]*total
 for i in range(1,3):
-    deaths_averted += list(deaths_no_vx - (df1['deaths'].iloc[total*i:total*i+total]).values)
+    new_deaths_averted = list(deaths_no_vx - (df1['deaths'].iloc[total*i:total*i+total]).values)
+    deaths_averted += new_deaths_averted
+    perc_deaths_averted += list(new_deaths_averted/deaths_no_vx)
 
 df1['Deaths averted'] = deaths_averted
-df1['% Deaths averted'] = (deaths_averted/df1['deaths'])*100
+df1['% Deaths averted'] = perc_deaths_averted
 
 df_to_use = df1[df1['vaccine_prime'] + df1['vaccine_boost']>0]
 df_to_use = df_to_use[df_to_use['Deaths averted'] > 0]
@@ -77,7 +80,7 @@ ax.set_ylabel('New deaths', color='green')
 ax = axv[1]
 sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='% Deaths averted', hue='Coverage',
 ax=ax, palette='flare')
-# ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 ax.grid(alpha=0.3)
 ax.legend(title='Coverage')
 ax.set_title('% deaths averted')
@@ -88,7 +91,7 @@ ax.set_xlabel('')
 ax = axv[-1]
 l1 = sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='Doses per death averted', hue='Coverage',
 ax=ax, palette='flare')
-# l1.set(yscale='log')
+l1.set(yscale='log')
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.grid(alpha=0.3)
 ax.get_legend().remove()
