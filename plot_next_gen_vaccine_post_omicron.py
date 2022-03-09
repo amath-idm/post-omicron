@@ -185,6 +185,7 @@ ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ','
 
 fig.subplots_adjust(left=0.25)
 fig.subplots_adjust(right=0.85)
+fig.tight_layout(pad=3.0)
 fig.show()
 sc.savefig(str(sc.path(figdir) / 'next_gen_vx.png'), fig=fig)
 

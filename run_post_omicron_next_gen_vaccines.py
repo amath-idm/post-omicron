@@ -212,7 +212,6 @@ def make_sim(p):
     oi = inv_variant_map['omicron']  # Index of omicron results
     nvi = inv_variant_map['next_variant']  # Index of next variant results
 
-
     immunity = sim['immunity']
 
     immunity[oi, nvi] = var_pars['rel_imm_omicron_next']  # Relative immunity of omicron to next variant
@@ -227,7 +226,6 @@ def make_sim(p):
         immunity[nvi, -1] = var_pars['rel_imm_WT_next']
 
     pars.update({'immunity': immunity})
-
 
     sim.run_info = sc.objdict()
     sim.run_info.update(p)
