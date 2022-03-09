@@ -173,7 +173,7 @@ for i, inf in enumerate(df['new_infections_by_variant']):
             ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
             ax.tick_params(axis='x', rotation=90)
 
-pl.legend([omicron_lines[0], variant_lines[0], variant_lines[1], variant_lines[2]],
+pl.legend([omicron_lines[0], variant_lines[0], variant_lines[3], variant_lines[6]],
           ['Omicron', 'Emerged from Omicron', 'Emerged from WT', 'New cluster'], loc='right', bbox_to_anchor=(2.2, 2),
           title='Variant')
 axes[0,0].set_title(f'Introduced on \n{variant_timing[0]}')

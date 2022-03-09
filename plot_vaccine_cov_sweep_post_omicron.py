@@ -150,6 +150,8 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
             for j in y:
                 if z_deaths_ttest[j, i] > 0.05:
                     data[j, i] = np.nan  # To turn off these cells
+                if z_perc_deaths_averted[j,i] == 0:
+                    data[j, i] = np.nan  # To turn off these cells
 
         data[0,0] = np.nan
 
@@ -430,6 +432,10 @@ for variant in variants_to_plot:
 
     # Deaths averted
     z_deaths_averted = z_deaths[0, 0] - z_deaths
+    below0 = (z_deaths_averted < 0).sum()
+    if below0:
+        print(f'Warning: {below0} entries for deaths averted were below zero')
+        z_deaths_averted = np.maximum(0, z_deaths_averted)
     # Percent of deaths averted
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
     # Now doses per deaths averted
