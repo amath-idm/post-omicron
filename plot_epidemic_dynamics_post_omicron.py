@@ -239,3 +239,31 @@ fig.subplots_adjust(right=0.75)
 
 fig.show()
 fig.savefig(str(sc.path(figdir) / 'post_omicron_sev.png'), bbox_inches='tight')
+
+#%% Plotting
+sc.options(dpi=150)
+sc.options(font='Avenir')
+colors = sc.gridcolors(ncolors)
+fig, ax = pl.subplots(figsize=(7,7))
+
+# Plot bar charts
+n = len(variants_inf)
+# Set the width of the bars
+y_pos = (np.arange(0, len(variants_inf), 1))
+
+for v, var in enumerate(variants_inf):
+    for j, day in enumerate(variant_time):
+        if j == 0:
+            val = d['inf'][var][day]
+            ax.bar(y_pos[v], val, color=colors[j])
+
+ax.set_xticks(y_pos)
+ax.set_xticklabels(variant_inf_labels, rotation=90)
+ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
+ax.set_ylabel('Cumulative new infections')
+ax.set_xlabel('New variant')
+fig.subplots_adjust(bottom=0.28)
+fig.subplots_adjust(left=0.2)
+# Tidy up
+fig.show()
+fig.savefig(str(sc.path(figdir) / 'inf_by_variant_v2.png'), bbox_inches='tight')

@@ -13,7 +13,7 @@ import matplotlib.ticker as mtick
 
 
 
-days_to_start = np.arange(-30, 100, 5)
+days_to_start = np.arange(-60, 100, 5)
 vaccine_prime = [0, 0.5, 1]
 vaccine_boost = [1]
 
@@ -57,9 +57,9 @@ fig, axv = plt.subplots(3, 1, figsize=(8, 10))
 ax = axv[0]
 
 new_inf = df2['new_infections_by_variant'][0]
-x = df2['datevec_sim'][303:433]
-ax.plot(x, new_inf.values[4,303:433], label='Infections')
-ax.fill_between(x, (new_inf.low[4,303:433]), (new_inf.high[4,303:433]), alpha=0.3)
+x = df2['datevec_sim'][273:433]
+ax.plot(x, new_inf.values[4,273:433], label='Infections')
+ax.fill_between(x, (new_inf.low[4,273:433]), (new_inf.high[4,273:433]), alpha=0.3)
 ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(ax.xaxis.get_major_locator()))
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.set_title('Next variant infections and deaths (no additional vaccination)')
@@ -68,9 +68,9 @@ ax.set_ylabel('New infections')
 
 ax = axv[0].twinx()
 new_deaths = df2['new_deaths'][0]
-x = df2['datevec_sim'][303:433]
-ax.plot(x, new_deaths.values[303:433], label='Deaths', color='green', ls='--')
-ax.fill_between(x, (new_deaths.low[303:433]), (new_deaths.high[303:433]), alpha=0.3, color='green')
+x = df2['datevec_sim'][273:433]
+ax.plot(x, new_deaths.values[273:433], label='Deaths', color='green', ls='--')
+ax.fill_between(x, (new_deaths.low[273:433]), (new_deaths.high[273:433]), alpha=0.3, color='green')
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.set_ylabel('New deaths', color='green')
 

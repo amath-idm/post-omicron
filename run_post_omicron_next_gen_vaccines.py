@@ -134,8 +134,8 @@ def make_sim(p):
 
     # Set the parameters
     pars = sc.objdict(
-        n_agents=54e3,
-        pop_scale=1e3,
+        n_agents=54e4,
+        pop_scale=1e2,
         location='south africa',
         rand_seed=p.idx,
         nab_decay=nab_decay_params[p.nab_decay],

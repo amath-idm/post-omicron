@@ -50,7 +50,7 @@ variants = {
 }
 
 new_variant_days = ['2022-08-25']
-days_to_start = np.arange(-30, 100, 5)
+days_to_start = np.arange(-60, 100, 5)
 vaccine_prime = [0, 0.5, 1]
 vaccine_boost = [1]
 
@@ -118,8 +118,8 @@ def make_sim(p):
 
     # Set the parameters
     pars = sc.objdict(
-        n_agents=54e3,
-        pop_scale=1e3,
+        n_agents=54e4,
+        pop_scale=1e2,
         location='south africa',
         rand_seed=p.idx,
         nab_decay=nab_decay_params[p.nab_decay],
