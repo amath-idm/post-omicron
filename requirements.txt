@@ -1,0 +1,4 @@
+covasim
+numpy
+pandas
+sciris

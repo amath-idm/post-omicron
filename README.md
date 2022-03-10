@@ -1,16 +1,23 @@
-# post-omicron
+# Vaccines-Post-Omicron
 
-Repository for the manuscript Vaccines in the COVID-19 Endgame
+This repository includes the code for reproducing the results in the manuscript "The changing impact of vaccines in the COVID-19 pandemic". The citation for the manuscript is:
 
-Workflow:
+> **The changing impact of vaccines in the COVID-19 pandemic**. Cohen JA, Stuart RM, Panovska-Griffiths J, Mudimu E, Abeysuriya RG, Kerr CC, Famulare M, Klein DJ. medRxiv (2022), doi: TBC.
 
-1. Run analysis of vaccine efficacy over time (`run_vaccine_wave1.py`)
-   1. plot results (`plot_vaccine_efficiency.py`)
-2. Run analysis of primary vs booster tradeoff in face of new variants (`run_post_omicron_cov_sweep.py`)
-   1. plot epidemic dynamics (`plot_epidemic_dynamics_post_omicron.py`)
-   2. plot vaccine results (`plot_vaccine_cov_sweep_post_omicron.py`)
-3. Run analysis of variant chasing in face of new variants (`run_post_omicron_variant_chasing.py`)
-   1plot results (`plot_vaccine_variant_chasing_post_omicron.py`)
-4. Run analysis of next generation vaccines
-   1. Plot results
-5. Run analysis of therapeutics
+
+## Organization
+
+The repository is organized as follows:
+
+- `post-omicron` contains the code for reproducing each figure of the manuscript. 
+- `figs` contains the figures generated from the above scripts and used in the manuscript.
+
+
+## Installation
+
+Use `pip install -r requirements.txt` to install dependencies, then run the scripts. 
+
+
+## Further information
+
+Further information on Covasim is available [here](http://docs.covasim.org). If you have further questions or would like technical assistance, please reach out to us at covasim@idmod.org.

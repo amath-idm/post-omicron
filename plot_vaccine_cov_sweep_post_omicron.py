@@ -113,14 +113,14 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None
             ax.text(i, j, label, ha='center', va='center', c=color)
 
     if row == 2:
-        ax.set_xticks(x, xvals)
+        ax.set_xticks(x, xlabels)
         ax.set_xlabel('Primary series vaccine coverage', fontweight='bold')
     else:
         ax.set_xticks([])
     if row == 0:
         ax.set_title(f'{var_name} on\n{time_lab}')
     if col == 0:
-        ax.set_yticks(y, yvals)
+        ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
     else:
         ax.set_yticks([])
@@ -149,6 +149,8 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
         for i in x:
             for j in y:
                 if z_deaths_ttest[j, i] > 0.05:
+                    data[j, i] = np.nan  # To turn off these cells
+                if z_perc_deaths_averted[j,i] == 0:
                     data[j, i] = np.nan  # To turn off these cells
 
         data[0,0] = np.nan
@@ -200,14 +202,14 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
             ax.text(i, j, label, ha='center', va='center', c=color)
 
     if row == 2:
-        ax.set_xticks(x, xvals)
+        ax.set_xticks(x, xlabels)
         ax.set_xlabel('Primary series vaccine coverage', fontweight='bold')
     else:
         ax.set_xticks([])
     if row == 0:
         ax.set_title(f'{var_name} on\n{time_lab}')
     if col == 0:
-        ax.set_yticks(y, yvals)
+        ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
     else:
         ax.set_yticks([])
@@ -301,6 +303,8 @@ for variant in variants:
         xvals = vaccine_prime
         y = np.arange(len(yvals))
         x = np.arange(len(xvals))
+        xlabels = [f'{int((.47 + .53*x)*100)}%' for x in xvals]
+        ylabels = [f'{int(y*100)}%' for y in yvals]
 
         # Calculate t-tests for deaths
         from scipy.stats import ttest_ind
@@ -393,6 +397,8 @@ for variant in variants_to_plot:
     xvals = vaccine_prime
     y = np.arange(len(yvals))
     x = np.arange(len(xvals))
+    xlabels = [f'{int((.47 + .53 * x) * 100)}%' for x in xvals]
+    ylabels = [f'{int(y * 100)}%' for y in yvals]
 
     # Calculate t-tests for deaths
     from scipy.stats import ttest_ind
@@ -430,6 +436,10 @@ for variant in variants_to_plot:
 
     # Deaths averted
     z_deaths_averted = z_deaths[0, 0] - z_deaths
+    below0 = (z_deaths_averted < 0).sum()
+    if below0:
+        print(f'Warning: {below0} entries for deaths averted were below zero')
+        z_deaths_averted = np.maximum(0, z_deaths_averted)
     # Percent of deaths averted
     z_perc_deaths_averted = 100 * z_deaths_averted / z_deaths[0, 0]
     # Now doses per deaths averted
