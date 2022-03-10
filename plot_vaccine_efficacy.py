@@ -90,7 +90,7 @@ ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ','
 ax.axvspan(inf_df.iloc[100]['Date'], inf_df.iloc[180]['Date'], alpha=0.5, color='goldenrod')
 ax.get_legend().remove()
 # ax.text(res['vx_day'][0], 100000, 'Example efficacy \nwindow')
-ax.annotate('Example efficacy window', xy=(0.083, -0.05), xytext=(0.083, -0.15), xycoords='axes fraction',
+ax.annotate('Example window', xy=(0.083, -0.05), xytext=(0.083, -0.15), xycoords='axes fraction',
             fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
             arrowprops=dict(arrowstyle='-[, widthB=0.75, lengthB=.8', lw=1.0))
@@ -114,9 +114,9 @@ ax = axv[-1]
 sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
 ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 ax.set_xlabel('Date')
-ax.set_ylabel('Vaccine efficacy (60 day window)')
+ax.set_ylabel('Vaccine effectiveness\n(60 day window)')
 ax.grid(alpha=0.3)
-ax.set_title('Vaccine efficacy and efficiency')
+ax.set_title('Vaccine effectiveness and efficiency')
 ax.set_ylim(bottom=0, top=1)
 ax.legend()
 
@@ -151,7 +151,7 @@ ax.grid(alpha=0.3)
 ax.set_title('Infections by variant and percent exposed (no vaccination)')
 ax.set_ylim(bottom=0, top=2000000)
 ax.legend(bbox_to_anchor=(0.15, 1), title='Variant')
-ax.annotate('Example efficacy window', xy=(0.083, -0.05), xytext=(0.083, -0.15), xycoords='axes fraction',
+ax.annotate('Example window', xy=(0.083, -0.05), xytext=(0.083, -0.15), xycoords='axes fraction',
             fontsize=8, ha='center', va='bottom',
             bbox=dict(boxstyle='square', fc='white'),
             arrowprops=dict(arrowstyle='-[, widthB=0.75, lengthB=.8', lw=1.0))
@@ -175,9 +175,9 @@ sns.lineplot(data=res, x='vx_day', y='VE_symp', ax=ax, lw=2, label='Symptomatic 
 sns.lineplot(data=res, x='vx_day', y='VE_sev', ax=ax, lw=2, label='Severe disease')
 ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 ax.set_xlabel('Date')
-ax.set_ylabel('Vaccine efficacy\n(60 day window)')
+ax.set_ylabel('Vaccine effectiveness\n(60 day window)')
 ax.grid(alpha=0.3)
-ax.set_title('Vaccine efficacy')
+ax.set_title('Vaccine effectiveness')
 ax.set_ylim(bottom=0, top=1)
 ax.legend()
 
