@@ -1,8 +1,8 @@
 # Vaccines-Post-Omicron
 
-This repository includes the code for reproducing the results in the manuscript "The changing value of vaccines in the COVID-19 pandemic". The citation for the manuscript is:
+This repository includes the code for reproducing the results in the manuscript "The changing impact of vaccines in the COVID-19 pandemic". The citation for the manuscript is:
 
-> **The changing value of vaccines in the COVID-19 pandemic**. Cohen JA, Stuart RM, Panovska-Griffiths J, Mudimu E, Abeysuriya RG, Kerr CC, Famulare M, Klein DJ. medRxiv (2022), doi: TBC.
+> **The changing impact of vaccines in the COVID-19 pandemic**. Cohen JA, Stuart RM, Panovska-Griffiths J, Mudimu E, Abeysuriya RG, Kerr CC, Famulare M, Klein DJ. medRxiv (2022), doi: TBC.
 
 
 ## Organization
