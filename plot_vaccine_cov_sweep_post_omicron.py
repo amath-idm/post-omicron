@@ -113,14 +113,14 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None
             ax.text(i, j, label, ha='center', va='center', c=color)
 
     if row == 2:
-        ax.set_xticks(x, xvals)
+        ax.set_xticks(x, xlabels)
         ax.set_xlabel('Primary series vaccine coverage', fontweight='bold')
     else:
         ax.set_xticks([])
     if row == 0:
         ax.set_title(f'{var_name} on\n{time_lab}')
     if col == 0:
-        ax.set_yticks(y, yvals)
+        ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
     else:
         ax.set_yticks([])
@@ -202,14 +202,14 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
             ax.text(i, j, label, ha='center', va='center', c=color)
 
     if row == 2:
-        ax.set_xticks(x, xvals)
+        ax.set_xticks(x, xlabels)
         ax.set_xlabel('Primary series vaccine coverage', fontweight='bold')
     else:
         ax.set_xticks([])
     if row == 0:
         ax.set_title(f'{var_name} on\n{time_lab}')
     if col == 0:
-        ax.set_yticks(y, yvals)
+        ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
     else:
         ax.set_yticks([])
@@ -303,6 +303,8 @@ for variant in variants:
         xvals = vaccine_prime
         y = np.arange(len(yvals))
         x = np.arange(len(xvals))
+        xlabels = [f'{int((.47 + .53*x)*100)}%' for x in xvals]
+        ylabels = [f'{int(y*100)}%' for y in yvals]
 
         # Calculate t-tests for deaths
         from scipy.stats import ttest_ind
@@ -395,6 +397,8 @@ for variant in variants_to_plot:
     xvals = vaccine_prime
     y = np.arange(len(yvals))
     x = np.arange(len(xvals))
+    xlabels = [f'{int((.47 + .53 * x) * 100)}%' for x in xvals]
+    ylabels = [f'{int(y * 100)}%' for y in yvals]
 
     # Calculate t-tests for deaths
     from scipy.stats import ttest_ind
