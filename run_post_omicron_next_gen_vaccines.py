@@ -53,10 +53,11 @@ variants = {
     }
 }
 
-new_variant_days = ['2022-08-25']
+new_variant_days = ['2022-04-25']
+days_to_start = np.arange(-60, 100, 5)
 vaccine_breadth = [0, 1]
 vaccine_durability = [0, 1]
-vaccine_prime = [0.1, 0.5, 1]
+vaccine_prime = [1]
 vaccine_boost = [1]
 
 
@@ -73,7 +74,7 @@ def update_nab_kin(sim):
     return
 
 
-def make_vx_intv(vaccine='next_gen', boost=False, coverage=.5):
+def make_vx_intv(vaccine='next_gen', boost=False, day=None, coverage=.5):
     '''
     Return an age-targeted vaccine intervention
         * vaccine: the name of the vaccine, e.g. "pfizer"
@@ -82,17 +83,20 @@ def make_vx_intv(vaccine='next_gen', boost=False, coverage=.5):
         * coverage: vaccine coverage
     '''
 
-    day = np.arange(cv.day('2022-02-15', start_date='2021-10-01'), cv.day('2022-05-15', start_date='2021-10-01'))
+    end_vax_day = cv.date(cv.day(day, start_date='2021-10-01') + 30, start_date='2021-10-01')
 
+    days = np.arange(cv.day(day, start_date='2021-10-01'), cv.day(end_vax_day, start_date='2021-10-01'))
     if boost:
         interval = 180
         subtarget = {'inds': lambda sim: cv.true((sim.people.doses==2) & ((sim.t - sim.people.date_vaccinated) >= interval)),
-                         'vals': coverage/90}
+                         'vals': coverage/30}
+        pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
+        intv = cv.vaccinate_prob(vaccine=pfizer, label=vaccine, days=days, prob=0, subtarget=subtarget, booster=True, do_plot=False)
     else:
-        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 12)), 'vals': coverage/90}
+        subtarget = {'inds': lambda sim: cv.true((sim.people.age >= 12)), 'vals': coverage/30}
+        pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
+        intv = cv.vaccinate_prob(vaccine=pfizer, label=vaccine, days=days, prob=0, subtarget=subtarget, do_plot=False)
 
-    pfizer = cvpar.get_vaccine_dose_pars(vaccine='pfizer')
-    intv = cv.vaccinate_prob(vaccine=pfizer, label=vaccine, days=day, prob=0, subtarget=subtarget, do_plot=False)
     return sc.promotetolist(intv)
 
 
@@ -105,6 +109,7 @@ def scen_params():
     p['nab_decay'] = list(nab_decay_params.keys())
     p['next_variant'] = list(variants.keys())
     p['new_variant_day'] = new_variant_days
+    p['days_to_start'] = list(days_to_start)
     dims = [len(v) for k, v in p.items()]
     npars = np.prod(dims)
     return p, npars
@@ -134,8 +139,8 @@ def make_sim(p):
 
     # Set the parameters
     pars = sc.objdict(
-        n_agents=54e4,
-        pop_scale=1e2,
+        n_agents=54e3,
+        pop_scale=1e3,
         location='south africa',
         rand_seed=p.idx,
         nab_decay=nab_decay_params[p.nab_decay],
@@ -190,8 +195,10 @@ def make_sim(p):
 
     if (p.vaccine_breadth + p.vaccine_durability)>0:
         vax_label = 'next_gen'
-        future_vax_prime = make_vx_intv(vaccine=vax_label, coverage=p.vaccine_prime)
-        future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True, coverage=p.vaccine_boost)
+        day_to_start_vax = cv.date(cv.day(p.new_variant_day, start_day=pars['start_day']) + p.days_to_start,
+                                   start_date=pars['start_day'])
+        future_vax_prime = make_vx_intv(vaccine=vax_label, coverage=p.vaccine_prime, day=day_to_start_vax)
+        future_vax_boost = make_vx_intv(vaccine=vax_label, boost=True, coverage=p.vaccine_boost, day=day_to_start_vax)
         interventions += future_vax_prime
         interventions += future_vax_boost
 
