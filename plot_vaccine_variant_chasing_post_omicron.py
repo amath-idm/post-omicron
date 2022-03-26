@@ -43,7 +43,7 @@ total = n_reps * n_days
 df = df[df['vaccine_prime']==0]
 df = df[df['vaccine_boost']==0]
 df = df[df['next_variant']=='New cluster, more severe']
-df = df[df['new_variant_day']=='2022-04-25']
+df = df[df['new_variant_day']=='2022-08-25']
 deaths_no_vax =np.mean(df['deaths'])
 
 df1 = df1[df1['vaccine_prime'] + df1['vaccine_boost']==2]
@@ -52,8 +52,10 @@ perc_deaths_averted = deaths_averted/deaths_no_vax
 df1['Deaths averted'] = deaths_averted
 df1['% Deaths averted'] = perc_deaths_averted
 
+df_nextgen_novax = df_nextgen[df_nextgen['vaccine_breadth'] + df_nextgen['vaccine_durability'] == 0]
+df_nextgen_novax = np.mean(df_nextgen_novax['deaths'].values)
 df_nextgen = df_nextgen[df_nextgen['vaccine_breadth'] + df_nextgen['vaccine_durability']>0]
-deaths_averted = deaths_no_vax - df_nextgen['deaths']
+deaths_averted = df_nextgen_novax - df_nextgen['deaths']
 perc_deaths_averted = deaths_averted/deaths_no_vax
 df_nextgen['Deaths averted'] = deaths_averted
 df_nextgen['% Deaths averted'] = perc_deaths_averted
@@ -71,20 +73,20 @@ for row in range(len(df_nextgen)):
 
     vaccine_strategy.append(vaccine)
 df_nextgen['Coverage'] = vaccine_strategy
-
+df_nextgen = df_nextgen[df_nextgen['Deaths averted'] > 0]
 
 df_to_use = df1[df1['vaccine_prime'] + df1['vaccine_boost']==2]
 # df_to_use = df1[df1['vaccine_prime'] + df1['vaccine_boost']>0]
-df_to_use = df_to_use[df_to_use['Deaths averted'] > 0]
+# df_to_use = df_to_use[df_to_use['Deaths averted'] > 0]
 df_to_use['Doses per death averted'] = df_to_use['doses']/df_to_use['Deaths averted']
-df_to_use = df_to_use[df_to_use['Doses per death averted'] > 0]
+
 vaccine_strategy = []
 for row in range(len(df_to_use)):
-    vaccine_strategy.append(f'Boost {int(df_to_use.iloc[row,0]*100)}% vaccinated, prime {int(df_to_use.iloc[row,1]*100)}% unvaccinated')
+    vaccine_strategy.append('Variant-chasing vaccine')
 df_to_use['Coverage'] = vaccine_strategy
 
 
-fig, axv = plt.subplots(2, 1, figsize=(6, 8))
+fig, axv = plt.subplots(2, 1, figsize=(8, 8))
 # plt.rcParams.update({'font.size': 18})
 # ax = axv[0]
 #
@@ -107,30 +109,33 @@ fig, axv = plt.subplots(2, 1, figsize=(6, 8))
 # ax.set_ylabel('New deaths', color='green')
 
 ax = axv[0]
-sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='% Deaths averted',
+sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='% Deaths averted', hue='Coverage',
 ax=ax, palette='flare')
 sns.lineplot(data=df_nextgen.reset_index(), x='days_to_start', y='% Deaths averted', hue='Coverage',
-ax=ax, palette='flare')
+ax=ax, palette='crest')
 ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 ax.grid(alpha=0.3)
-# ax.legend(title='Coverage')
-ax.get_legend().remove()
+ax.legend(title='Vaccine')
 ax.set_title('% deaths averted')
 # ax.set_xticks([])
 # ax.set_xticklabels([])
 ax.set_xlabel('')
 
-ax = axv[-1]
+
+df_to_use = df_to_use[df_to_use['Doses per death averted'] > 0]
+ax = axv[1]
 sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='Doses per death averted', hue='Coverage',
 ax=ax, palette='flare')
 sns.lineplot(data=df_nextgen.reset_index(), x='days_to_start', y='Doses per death averted', hue='Coverage',
-ax=ax, palette='flare')
+ax=ax, palette='crest')
 ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, p: format(int(x), ',')))
 ax.grid(alpha=0.3)
 ax.get_legend().remove()
 ax.set_xlabel('Days from variant introduction to vaccine delivery')
 ax.set_title('Doses per death averted')
+
 fig.tight_layout(pad=3.0)
+
 
 fig.show()
 # ax.set_ylim(bottom=0, top=2000000)
