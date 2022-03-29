@@ -49,7 +49,7 @@ variants = {
     }
 }
 
-new_variant_days = ['2022-04-25']
+new_variant_days = ['2022-08-25']
 days_to_start = np.arange(-60, 100, 5)
 vaccine_prime = [1]
 vaccine_boost = [1]
@@ -64,9 +64,9 @@ def make_vx_intv(vaccine='new_cluster', boost=False, day=None, coverage=1):
         * coverage: vaccine coverage
     '''
 
-    end_vax_day = cv.date(cv.day(day, start_date='2021-10-01') + 30, start_date='2021-10-01')
+    # end_vax_day = cv.date(cv.day(day, start_date='2021-10-01') + 30, start_date='2021-10-01')
 
-    days = np.arange(cv.day(day, start_date='2021-10-01'), cv.day(end_vax_day, start_date='2021-10-01'))
+    days = np.arange(cv.day(day, start_date='2021-10-01'), cv.day('2022-12-15', start_date='2021-10-01'))
 
     if boost:
         interval = 180
