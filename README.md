@@ -9,8 +9,8 @@ This repository includes the code for reproducing the results in the manuscript 
 
 The repository is organized as follows:
 
-- `post-omicron` contains the code for reproducing each figure of the manuscript. 
-- `figs` contains the figures generated from the above scripts and used in the manuscript.
+- `run_` scripts contain the code for reproducing each figure of the manuscript. 
+- `plot_` scripts contain the figures generated from the above scripts and used in the manuscript.
 
 
 ## Installation
