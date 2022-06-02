@@ -47,34 +47,41 @@ variants = {
         'rel_severe_next': 1,
         'n_imports': 0
     },
-    'Emerged from Omicron': {
-        'rel_beta_next': 3.5,
+    # 'Emerged from Omicron': {
+    #     'rel_beta_next': 3.5,
+    #     'rel_imm_omicron_next': 0.5,
+    #     'rel_imm_WT_next': 0.02,
+    #     'rel_severe_next': 1,
+    #     'n_imports': 25
+    # },
+    'Emerged from Omicron, more transmissible': {
+        'rel_beta_next': 4.5,
         'rel_imm_omicron_next': 0.5,
         'rel_imm_WT_next': 0.02,
         'rel_severe_next': 1,
         'n_imports': 25
     },
-    'Emerged from WT': {
-        'rel_beta_next': 3.5,
-        'rel_imm_omicron_next': 0.02,
-        'rel_imm_WT_next': 0.5,
-        'rel_severe_next': 1,
-        'n_imports': 25
-    },
-    'New cluster': {
-        'rel_beta_next': 3.5,
-        'rel_imm_omicron_next': 0.02,
-        'rel_imm_WT_next': 0.02,
-        'rel_severe_next': 1,
-        'n_imports': 25
-    },
-    'Emerged from Omicron, more severe': {
-        'rel_beta_next': 3.5,
-        'rel_imm_omicron_next': 0.5,
-        'rel_imm_WT_next': 0.02,
-        'rel_severe_next': 3.5,
-        'n_imports': 25
-    },
+    # 'Emerged from WT': {
+    #     'rel_beta_next': 3.5,
+    #     'rel_imm_omicron_next': 0.02,
+    #     'rel_imm_WT_next': 0.5,
+    #     'rel_severe_next': 1,
+    #     'n_imports': 25
+    # },
+    # 'New cluster': {
+    #     'rel_beta_next': 3.5,
+    #     'rel_imm_omicron_next': 0.02,
+    #     'rel_imm_WT_next': 0.02,
+    #     'rel_severe_next': 1,
+    #     'n_imports': 25
+    # },
+    # 'Emerged from Omicron, more severe': {
+    #     'rel_beta_next': 3.5,
+    #     'rel_imm_omicron_next': 0.5,
+    #     'rel_imm_WT_next': 0.02,
+    #     'rel_severe_next': 3.5,
+    #     'n_imports': 25
+    # },
     'Emerged from WT, more severe': {
         'rel_beta_next': 3.5,
         'rel_imm_omicron_next': 0.02,

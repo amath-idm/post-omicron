@@ -80,26 +80,35 @@ df_to_use = df1[df1['vaccine_prime'] + df1['vaccine_boost']==2]
 # df_to_use = df1[df1['vaccine_prime'] + df1['vaccine_boost']>0]
 # df_to_use = df_to_use[df_to_use['Deaths averted'] > 0]
 df_to_use['Doses per death averted'] = df_to_use['doses']/df_to_use['Deaths averted']
+df_to_use_doses = df_to_use[df_to_use['Doses per death averted'] > 0]
 
 vaccine_strategy = []
 for row in range(len(df_to_use)):
     vaccine_strategy.append('Variant-chasing vaccine')
 df_to_use['Coverage'] = vaccine_strategy
 
-# plt.rcParams['figure.figsize'] = (16, 10)
-plt.rcParams['font.size'] = 24
-fig, ax = plt.subplots(figsize=(18, 10))
+plt.rcParams['font.size'] = 20
+fig, axv = plt.subplots(2, 1, figsize=(12, 16))
 sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='% Deaths averted', hue='Coverage',
-ax=ax, palette='flare')
+ax=axv[0], palette='flare')
 sns.lineplot(data=df_nextgen.reset_index(), x='days_to_start', y='% Deaths averted', hue='Coverage',
-ax=ax, palette='crest')
-ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
-ax.grid(alpha=0.3)
-ax.legend(title='Vaccine', bbox_to_anchor=(1.1,.75))
-ax.set_title('Deaths averted (%) compared to current vaccines')
-ax.set_xlabel('Days from variant introduction to vaccine delivery')
+ax=axv[0], palette='crest')
+axv[0].yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+axv[0].grid(alpha=0.3)
+axv[0].legend(title='Vaccine')
+axv[0].set_title('Deaths averted (%) compared to no additional vaccination')
+axv[0].set_xlabel('')
+sns.lineplot(data=df_to_use.reset_index(), x='days_to_start', y='Doses per death averted', hue='Coverage',
+ax=axv[1], palette='flare')
+sns.lineplot(data=df_nextgen.reset_index(), x='days_to_start', y='Doses per death averted', hue='Coverage',
+ax=axv[1], palette='crest')
+axv[1].grid(alpha=0.3)
+axv[1].set(yscale='log')
+axv[1].set_title('Doses per death averted compared to no additional vaccination')
+# axv[1].set_ylim(bottom=0, top=15000)
+axv[1].set_xlabel('Days from variant introduction to vaccine delivery')
+axv[1].get_legend().remove()
 fig.show()
 # ax.set_ylim(bottom=0, top=2000000)
-sc.savefig(str(sc.path(figdir) / 'variant_chasing.png'), fig=fig)
 sc.savefig(str(sc.path(figdir) / 'variant_chasing.png'), fig=fig)
 print('Done')
