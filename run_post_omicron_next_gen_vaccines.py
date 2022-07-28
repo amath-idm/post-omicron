@@ -9,6 +9,7 @@ import pandas as pd
 import covasim as cv
 import covasim.parameters as cvpar
 import covasim.immunity as cvi
+import covasim.defaults as cvd
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -54,9 +55,9 @@ variants = {
 }
 
 new_variant_days = ['2022-08-25']
-days_to_start = np.arange(-180, 0, 5)
-vaccine_breadth = [1]
-vaccine_durability = [1]
+days_to_start = np.arange(-150, 60, 10)
+vaccine_breadth = [0,1]
+vaccine_durability = [0,1]
 vaccine_prime = [1]
 vaccine_boost = [1]
 
@@ -147,7 +148,8 @@ def make_sim(p):
         pop_type = 'hybrid',
         start_day = '2021-10-01',
         end_day = '2022-12-15',
-        verbose = 0.1
+        verbose = 0.1,
+        analyzers=[cv.snapshot(days='2022-12-15')]
     )
 
     # Intervention definitions
@@ -254,7 +256,10 @@ def build_sim(index, idx):
 def run_sim(sim):
     # run sim
     sim.run()
-
+    people = sim['analyzers'][0].snapshots[0]
+    sim.deaths = people.dead
+    sim.ages = people.age
+    sim['analyzers'][0] = []  # Reset analyzers
     # shrink sim
     sim.shrink()
 
@@ -326,6 +331,7 @@ if __name__ == '__main__':
     inv_variant_map = {v: k for k, v in ref_sim['variant_map'].items()}
     oi = inv_variant_map['omicron']  # Index of omicron results
     di = inv_variant_map['delta']  # Index of delta results
+    life_exp = pd.read_csv('sa_life_ex.csv')
     for param in params:
         d[param] = []
     d.perc_peak = []
@@ -336,6 +342,7 @@ if __name__ == '__main__':
     d.severe = []
     d.infections_next_variant = []
     d.severe_next_variant = []
+    d.ylls = []
     if not debug:
         for msim in msims:
             for sim in msim.sims:
@@ -356,6 +363,12 @@ if __name__ == '__main__':
                     np.sum(sim.results['variant']['new_severe_by_variant'][oi + 1, date_after:]))
                 peak_day = list(sim.results['variant']['new_infections_by_variant'][oi + 1, :]).index(
                     np.max(sim.results['variant']['new_infections_by_variant'][oi + 1, :]))
+                death_ages = sim.ages[sim.deaths.nonzero()[0]]
+                death_inds = np.fromiter(
+                    (np.nonzero(life_exp['age_to'].values <= this_age)[0][-1] for this_age in death_ages),
+                    dtype=cvd.default_int,
+                    count=len(death_ages))
+                d.ylls.append(np.sum(life_exp['value'].values[death_inds]) * sim['pop_scale'])
 
         sc.saveobj(f'{resfolder}/{args.root}_vx_rollout_data.obj', d)
 

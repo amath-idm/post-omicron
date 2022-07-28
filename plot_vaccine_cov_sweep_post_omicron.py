@@ -46,6 +46,8 @@ fig2,axs2 = pl.subplots(nrows=3, ncols=2, figsize=figsize)
 def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None, var_name=None, row=None):
     ''' Plot a matrix of results as a heat map '''
     time_col_map = {'2022-02-25': 0, '2022-04-25': 1, '2022-08-25': 2}
+    time_label = {'2022-02-25': '2 months after\nOmicron wave 1 peak', '2022-04-25': '4 months after\nOmicron wave 1 peak',
+                  '2022-08-25': '8 months after\nOmicron wave 1 peak'}
     col = time_col_map[time_lab]
     print(f'Plotting: {var_name}, time={time_lab}, row={row}, col={col}')
     if var_name in figs.keys():
@@ -118,7 +120,7 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None
     else:
         ax.set_xticks([])
     if row == 0:
-        ax.set_title(f'{var_name} on\n{time_lab}')
+        ax.set_title(f'{var_name} {time_label[time_lab]}')
     if col == 0:
         ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
@@ -140,6 +142,9 @@ def heatmap(data, zlabel, suptitle, filename, cmap, threshold=0.5, time_lab=None
 def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_lab=None, time_lab=None, var_name=None, row=None):
     ''' Plot a matrix of results as a heat map '''
     var_col_map = {'Emerged from WT, more severe': 0, 'New cluster, more severe': 1}
+    time_label = {'2022-02-25': '2 months after\nOmicron wave 1 peak',
+                  '2022-04-25': '4 months after\nOmicron wave 1 peak',
+                  '2022-08-25': '8 months after\nOmicron wave 1 peak'}
     col = var_col_map[var_lab]
     print(f'Plotting: {var_name}, row={row}, col={col}')
     ax = axs2[row, col]
@@ -207,7 +212,7 @@ def heatmap_by_var(data, zlabel, suptitle, filename, cmap, threshold=0.5, var_la
     else:
         ax.set_xticks([])
     if row == 0:
-        ax.set_title(f'{var_name} on\n{time_lab}')
+        ax.set_title(f'{var_name} {time_label[time_lab]}')
     if col == 0:
         ax.set_yticks(y, ylabels)
         ax.set_ylabel('Booster dose vaccine coverage', fontweight='bold')
@@ -252,8 +257,8 @@ nab_decays = df['nab_decay'].unique()
 
 #%% Plotting
 
-variants = ['None', 'Emerged from Omicron', 'Emerged from WT', 'New cluster',
-    'Emerged from Omicron, more severe', 'Emerged from WT, more severe',
+variants = ['None', 'Emerged from Omicron, more transmissible',
+    'Emerged from WT, more severe',
     'New cluster, more severe'
 ]
 
@@ -262,28 +267,16 @@ variant_dict = {
         'label': 'No new variant',
         'fn': 'none',
     },
-    'Emerged from Omicron': {
-        'label': 'Emerged from Omicron',
+    'Emerged from Omicron, more transmissible': {
+        'label': 'Omicron-like, more transmissible',
         'fn': 'from_omicron',
     },
-    'Emerged from WT': {
-        'label': 'Emerged from WT',
-        'fn': 'from_WT',
-    },
-    'New cluster': {
-        'label': 'New antigenic cluster',
-        'fn': 'new_cluster',
-    },
-    'Emerged from Omicron, more severe': {
-        'label': 'Emerged from Omicron\n more severe',
-        'fn': 'from_omicron_severe',
-    },
     'Emerged from WT, more severe': {
-        'label': 'Emerged from WT\n more severe',
+        'label': 'Delta-like',
         'fn': 'from_WT_severe',
     },
     'New cluster, more severe': {
-        'label': 'New cluster\nmore severe',
+        'label': 'Escape variant, more severe',
         'fn': 'new_cluster_severe',
     },
 

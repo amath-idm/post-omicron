@@ -41,8 +41,8 @@ n_days = len(days_to_start)
 total = n_reps * n_days
 
 
-# df_nextgen_novax = df_nextgen[df_nextgen['vaccine_breadth'] + df_nextgen['vaccine_durability'] == 0]
-# deaths_no_vax = np.mean(df_nextgen_novax['deaths'].values)
+df_nextgen_novax = df_nextgen[df_nextgen['vaccine_breadth'] + df_nextgen['vaccine_durability'] == 0]
+deaths_no_vax = np.mean(df_nextgen_novax['deaths'].values)
 
 df = df[df['vaccine_prime'] + df['vaccine_boost']==2]
 df = df[df['next_variant'] == 'New cluster, more severe']
@@ -50,14 +50,18 @@ df = df[df['new_variant_day'] == '2022-08-25']
 df_deaths_pfizer = np.mean(df['deaths'])
 
 df1 = df1[df1['vaccine_prime'] + df1['vaccine_boost']==2]
-deaths_averted = df_deaths_pfizer - df1['deaths']
-perc_deaths_averted = deaths_averted/df_deaths_pfizer
+# deaths_averted = df_deaths_pfizer - df1['deaths']
+# perc_deaths_averted = deaths_averted/df_deaths_pfizer
+deaths_averted = deaths_no_vax - df1['deaths']
+perc_deaths_averted = deaths_averted/deaths_no_vax
 df1['Deaths averted'] = deaths_averted
 df1['% Deaths averted'] = perc_deaths_averted
 
 df_nextgen = df_nextgen[df_nextgen['vaccine_breadth']>0]
-deaths_averted = df_deaths_pfizer - df_nextgen['deaths']
-perc_deaths_averted = deaths_averted/df_deaths_pfizer
+# deaths_averted = df_deaths_pfizer - df_nextgen['deaths']
+# perc_deaths_averted = deaths_averted/df_deaths_pfizer
+deaths_averted = deaths_no_vax - df_nextgen['deaths']
+perc_deaths_averted = deaths_averted/deaths_no_vax
 df_nextgen['Deaths averted'] = deaths_averted
 df_nextgen['% Deaths averted'] = perc_deaths_averted
 df_nextgen['Doses per death averted'] = df_nextgen['doses']/df_nextgen['Deaths averted']
