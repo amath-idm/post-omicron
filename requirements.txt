@@ -2,3 +2,4 @@ covasim
 numpy
 pandas
 sciris
+seaborn
