@@ -2,7 +2,7 @@
 
 This repository includes the code for reproducing the results in the manuscript "The changing impact of vaccines in the COVID-19 pandemic". The citation for the manuscript is:
 
-> **The changing impact of vaccines in the COVID-19 pandemic**. Cohen JA, Stuart RM, Panovska-Griffiths J, Mudimu E, Abeysuriya RG, Kerr CC, Famulare M, Klein DJ. medRxiv (2022), doi: TBC.
+> **The changing health impact of vaccines in the COVID-19 pandemic: A modeling study**. Cohen JA, Stuart RM, Panovska-Griffiths J, Mudimu E, Abeysuriya RG, Kerr CC, Famulare M, Klein DJ. *Cell Reports* (2023), in press.
 
 
 ## Organization
@@ -20,4 +20,4 @@ Use `pip install -r requirements.txt` to install dependencies, then run the scri
 
 ## Further information
 
-Further information on Covasim is available [here](http://docs.covasim.org). If you have further questions or would like technical assistance, please reach out to us at covasim@idmod.org.
+Further information on Covasim is available [here](http://docs.covasim.org). If you have further questions or would like technical assistance, please reach out to us at info@covasim.org.
